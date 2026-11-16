@@ -11,6 +11,10 @@
     by the credential provider is missing. The USBip driver is not bundled
     either; the installer detects it and tells the user where to get it.
 
+    Inno Setup itself is a build-machine prerequisite that must be installed
+    by the user. This script only looks for an existing ISCC.exe; it never
+    downloads, extracts or otherwise ships the Inno Setup installer.
+
 .PARAMETER Version
     Installer version. Defaults to the version in
     Windows\panel\src-tauri\tauri.conf.json.
@@ -28,8 +32,8 @@
     Rebuild viiper.exe even when .build\viiper\viiper.exe exists.
 
 .PARAMETER Iscc
-    Path to ISCC.exe. By default the script searches the usual Inno Setup 6/7
-    install locations.
+    Path to ISCC.exe. By default the script looks on PATH and then in the usual
+    Inno Setup 6/7 install locations.
 
 .EXAMPLE
     .\Windows\installer\build-installer.ps1
@@ -101,29 +105,32 @@ function Resolve-Iscc([string]$Explicit) {
         return (Resolve-Path -LiteralPath $Explicit).Path
     }
 
-    $candidates = @(
-        (Join-Path $env:LOCALAPPDATA 'Programs\Inno Setup 7\ISCC.exe'),
-        (Join-Path $env:LOCALAPPDATA 'Programs\Inno Setup 6\ISCC.exe'),
-        'C:\Program Files\Inno Setup 7\ISCC.exe',
-        'C:\Program Files (x86)\Inno Setup 7\ISCC.exe',
-        'C:\Program Files\Inno Setup 6\ISCC.exe',
-        'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
-    )
-    foreach ($candidate in $candidates) {
-        if (Test-Path -LiteralPath $candidate) { return $candidate }
-    }
-
     $command = Get-Command iscc -ErrorAction SilentlyContinue
     if ($command) { return $command.Source }
+
+    $installDirs = @()
+    if ($env:LOCALAPPDATA) { $installDirs += Join-Path $env:LOCALAPPDATA 'Programs' }
+    if ($env:ProgramFiles) { $installDirs += $env:ProgramFiles }
+    if (${env:ProgramFiles(x86)}) { $installDirs += ${env:ProgramFiles(x86)} }
+
+    foreach ($dir in $installDirs) {
+        foreach ($version in @('7', '6')) {
+            $candidate = Join-Path $dir "Inno Setup $version\ISCC.exe"
+            if (Test-Path -LiteralPath $candidate) { return $candidate }
+        }
+    }
 
     throw @'
 找不到 Inno Setup 编译器（ISCC.exe）。
 
-请先安装 Inno Setup 7（免费版即可）：
+Inno Setup 是构建机上的前置工具：本脚本只会查找已安装的 ISCC.exe，
+不会下载、解压或随仓库分发 Inno Setup 的安装程序。请自行安装
+Inno Setup 7（免费版即可）：
 
     winget install --id JRSoftware.InnoSetup.7 -e
 
-或者从 https://jrsoftware.org/isdl.php 下载安装，然后用 -Iscc 指定 ISCC.exe。
+也可以从 https://jrsoftware.org/isdl.php 自行下载安装；如果装在非默认位置，
+用 -Iscc "…\ISCC.exe" 指定路径。
 '@
 }
 
