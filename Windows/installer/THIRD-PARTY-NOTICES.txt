@@ -1,0 +1,117 @@
+Utochpad third-party notices
+============================
+
+This installer contains the following third-party components. The full
+license texts are installed next to the application.
+
+
+VIIPER (GPL-3.0)
+----------------
+Virtual USB device server used for the precision touchpad and the Radial
+controller.
+
+Upstream: https://github.com/Alia5/VIIPER
+Pinned revision: 20aa112c6ea47187526dd88d0fd666a68a5f4416
+Utochpad overlay source: Windows/viiper in the Utochpad source tree
+License: GNU General Public License, version 3 (see GPL-3.0.txt)
+
+The bundled viiper.exe is built from the pinned upstream revision with the
+Utochpad device overlay. The corresponding source is available at the URLs
+above. If you redistribute this installer, keep the source offer and the
+GPL-3.0.txt file with it.
+
+
+Lithnet.CredentialProvider (MIT)
+--------------------------------
+Credential provider wrapper used by Utochpad.CredentialProvider.
+
+Upstream: https://github.com/lithnet/windows-credential-provider
+License: MIT
+
+Copyright (c) 2023 Lithnet
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+USBip for Windows (external dependency, not bundled)
+----------------------------------------------------
+The touchpad and Radial controller require the USBip driver. It is not
+included in this installer; install it separately from:
+
+    https://github.com/vadimgrn/usbip-win2
+
+USBip is distributed under the BSD 2-Clause license by its own authors.
+
+
+Control panel frontend
+----------------------
+Tauri (MIT OR Apache-2.0), Vue (MIT), qrcode (MIT). These are compiled into
+Utochpad.exe; their license texts are available from the respective upstream
+projects.
+
+
+Credential provider tile icon
+-----------------------------
+Windows/Service/Utochpad.CredentialProvider/Resources/TileIconBlack.png and
+TileIconWhite.png are composites built on the Fluent UI System Icons from
+Microsoft, recombined and re-proportioned in the vector source
+brand/utouchpad_CP_icon.vectorcraft.
+
+Upstream: https://github.com/microsoft/fluentui-system-icons
+License: MIT
+
+Copyright (c) 2020 Microsoft Corporation
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+The MIT license grants copyright permissions only, not trademark rights.
+Utochpad is not affiliated with, sponsored by, or endorsed by Microsoft
+Corporation. "Windows", "Surface", "Segoe", and "Fluent" are trademarks of
+the Microsoft group of companies. They are used here only to describe
+compatibility and provenance.
+
+
+Microsoft components not bundled
+--------------------------------
+The installer does not redistribute .NET or Microsoft Edge WebView2. The
+credential provider requires the .NET 10 runtime, and the control panel
+requires the WebView2 runtime. Both are expected to be provided by Windows or
+by the user.
+
+
+Inno Setup
+----------
+The installer itself was built with Inno Setup. Generated installers may be
+distributed freely; see the Inno Setup license for details.

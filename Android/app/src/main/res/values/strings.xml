@@ -1,0 +1,23 @@
+<resources>
+    <string name="app_name">Utochpad</string>
+
+    <string name="settings_title">设置</string>
+    <string name="settings_category_appearance">外观</string>
+    <string name="settings_dark_theme">深色主题</string>
+    <string name="settings_dark_theme_summary">关闭后使用浅色外观</string>
+    <string name="settings_category_connection">连接</string>
+    <string name="settings_pc">电脑</string>
+    <string name="settings_password">Windows 密码</string>
+    <string name="settings_password_saved">手机已保存</string>
+    <string name="settings_password_missing">手机尚未保存</string>
+    <string name="settings_category_pairing">配对管理</string>
+    <string name="settings_unpair">解除配对</string>
+    <string name="settings_unpair_summary">解除与电脑的配对，并删除手机中保存的密码</string>
+    <string name="settings_category_about">关于</string>
+    <string name="settings_version">版本</string>
+
+    <string name="unpair_dialog_title">解除配对</string>
+    <string name="unpair_dialog_message">解除后，手机会忘记这台电脑，并删除保存的 Windows 密码。下次使用需要重新配对。</string>
+    <string name="unpair_confirm">解除</string>
+    <string name="action_cancel">取消</string>
+</resources>

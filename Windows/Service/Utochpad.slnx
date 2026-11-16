@@ -1,0 +1,12 @@
+<Solution>
+  <Configurations>
+    <Platform Name="ARM64" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="Utochpad.CredentialProvider/Utochpad.CredentialProvider.csproj">
+    <Platform Solution="*|x64" Project="x64" />
+  </Project>
+  <Project Path="Lithnet.CredentialProvider/src/Lithnet.CredentialProvider/Lithnet.CredentialProvider.csproj" />
+  <Project Path="Utochpad.Service/Utochpad.Service.csproj" />
+</Solution>

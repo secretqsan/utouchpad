@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="logoTitle logoDesc">
+  <title id="logoTitle">utochpad</title>
+  <desc id="logoDesc">白色圆角矩形底板上，一块抬起的米黄色圆角矩形触控板，右上角有一枚略高于板上缘的四角星，底部中央有一道刻线。</desc>
+
+  <defs>
+    <!-- 触控板表面：左上受光，右下收暗 -->
+    <linearGradient id="padFill" x1="66" y1="151" x2="446" y2="361" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FCF5E9"/>
+      <stop offset="0.55" stop-color="#F5E9D6"/>
+      <stop offset="1" stop-color="#E6D1B2"/>
+    </linearGradient>
+    <linearGradient id="padRim" x1="66" y1="151" x2="446" y2="361" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFEF9" stop-opacity="0.95"/>
+      <stop offset="0.5" stop-color="#FFFDF7" stop-opacity="0.32"/>
+      <stop offset="1" stop-color="#FFFDF7" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <g id="logo">
+    <!-- 白色圆角底板 -->
+    <path id="tile" fill="#FFFFFF"
+          d="M114 0 H398 A114 114 0 0 1 512 114 V398 A114 114 0 0 1 398 512 H114 A114 114 0 0 1 0 398 V114 A114 114 0 0 1 114 0 Z"/>
+
+    <!-- 触控板 -->
+    <rect id="touchpad" x="66" y="151" width="380" height="210" rx="42" fill="url(#padFill)"/>
+    <rect x="68" y="153" width="376" height="206" rx="40" fill="none" stroke="url(#padRim)" stroke-width="3"/>
+
+    <!-- 四角星：顶端高于触控板上缘 -->
+    <path id="star" fill="#B58A57"
+          d="M357.55 131.4 C357.55 177.46 370.46 190.38 416.52 190.38 C370.46 190.38 357.55 203.29 357.55 249.35 C357.55 203.29 344.64 190.38 298.58 190.38 C344.64 190.38 357.55 177.46 357.55 131.4 Z"/>
+
+    <!-- 底部中央刻线：加粗并拉长到低分辨率下仍像一条线 -->
+    <rect x="250" y="271" width="12" height="64" rx="6" fill="#B58A57"/>
+  </g>
+</svg>

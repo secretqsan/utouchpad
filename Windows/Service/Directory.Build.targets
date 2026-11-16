@@ -1,0 +1,12 @@
+<Project>
+  <!--
+    The upstream Lithnet.CredentialProvider.csproj sets
+    GeneratePackageOnBuild=true and a hard-coded PackageOutputPath
+    (D:\dev\nuget\packages) that does not exist on every machine.
+    Override both here instead of modifying files inside the submodule.
+  -->
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'Lithnet.CredentialProvider'">
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <PackageOutputPath>$(MSBuildThisFileDirectory)..\..\artifacts\nuget\</PackageOutputPath>
+  </PropertyGroup>
+</Project>

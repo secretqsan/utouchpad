@@ -1,0 +1,24 @@
+# Build output
+/artifacts/
+/.build/
+**/dist/
+**/bin/
+**/obj/
+**/node_modules/
+
+# .NET / Visual Studio
+.vs/
+
+# Rust / Tauri
+/Windows/panel/src-tauri/target/
+/Windows/panel/src-tauri/gen/
+
+# Android / Gradle
+/Android/.idea/
+/Android/.kotlin/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/

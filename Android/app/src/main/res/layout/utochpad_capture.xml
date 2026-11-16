@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Scan page entry point: a single DecoratedBarcodeView that pulls in our own
+  scanner layout below through zxing's zxing_scanner_layout attribute, so no
+  library layout has to be shadowed.
+-->
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <com.journeyapps.barcodescanner.DecoratedBarcodeView
+        android:id="@+id/utochpad_scanner"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:zxing_preview_scaling_strategy="centerCrop"
+        app:zxing_scanner_layout="@layout/utochpad_scanner"
+        app:zxing_use_texture_view="false" />
+</merge>

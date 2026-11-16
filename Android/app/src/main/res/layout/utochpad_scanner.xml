@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The scan screen is the camera preview and nothing else: no dimmed window,
+  no frame, no laser line, no detection dots, no hint text.
+
+  The ViewfinderView must stay in the layout (DecoratedBarcodeView throws
+  without it); its overlay is switched off through attributes instead.
+  The status TextView is omitted on purpose - setStatusText() null-checks.
+-->
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <com.journeyapps.barcodescanner.BarcodeView
+        android:id="@+id/zxing_barcode_surface"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <com.journeyapps.barcodescanner.ViewfinderView
+        android:id="@+id/zxing_viewfinder_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:zxing_possible_result_points="#00000000"
+        app:zxing_viewfinder_laser_visibility="false"
+        app:zxing_viewfinder_mask="#00000000" />
+</merge>

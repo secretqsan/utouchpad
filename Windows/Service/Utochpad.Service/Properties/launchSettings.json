@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Utochpad.Service": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}
