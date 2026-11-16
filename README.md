@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  锁屏时，它是你的指纹；回到桌面，它是一块真正的 Precision Touchpad，外加一枚 Surface Dial。
+  电脑亮着，它就是一块 Precision Touchpad，外加一枚 Surface Dial；锁屏时，它还是你的指纹。
 </p>
 
 <p align="center">
@@ -30,10 +30,8 @@ Utochpad 由两部分组成：一个 Windows 服务和驱动组件，以及一�
 它把手机接入了 Windows 最底层的输入路径：
 
 - **指纹解锁**——锁屏界面上出现 Utochpad 磁贴，点击后手机弹出指纹，验证通过即完成登录。
-- **精密触控板**——手机横屏后整屏就是触控板。每一根手指的原始触点都被原样交给 Windows，双指滚动、捏合、三指切换桌面等手势全部由 Windows 自己识别。
+- **精密触控板**——App 在前台时整屏就是触控板（固定横屏）。每一根手指的原始触点都被原样交给 Windows，双指滚动、捏合、三指切换桌面等手势全部由 Windows 自己识别。
 - **Surface Dial**——屏幕右侧的旋钮作为 Windows Radial 控制器使用，可调音量、画笔大小或任意支持 Radial 的应用。
-
-触控板和旋钮可以同时使用，因为它们在 Windows 眼里就是两块插在 USB 总线上的真实设备。
 
 ## 为什么是 Utochpad
 
@@ -64,16 +62,15 @@ Utochpad 由两部分组成：一个 Windows 服务和驱动组件，以及一�
 .\Windows\installer\build-installer.ps1
 ```
 
-生成的 `artifacts\installer\Utochpad-Setup-<version>.exe` 是带中文向导的安装包。运行它会注册服务、凭据提供程序和控制面板。
+生成的 `artifacts\installer\Utochpad-Setup-<version>.exe` 是带中文向导的安装包，运行它会注册服务、凭据提供程序和控制面板；无人值守安装用 `/VERYSILENT /SUPPRESSMSGBOXES`，卸载在“设置 → 应用”里。
 
-开发机上也可以直接用脚本安装：
+只构建 C# 侧：
 
 ```powershell
-.\Windows\installer\build-viiper.ps1
-.\Windows\installer\install.ps1
+dotnet build Windows\Service\Utochpad.slnx -c Release -p:Platform=x64
 ```
 
-详细的构建要求、参数和 Android APK 构建方式见 [docs/building.md](docs/building.md)。
+详细的构建要求、参数以及 VIIPER、控制面板和 Android APK 的构建方式见 [docs/building.md](docs/building.md)。
 
 ### 配对
 
@@ -85,9 +82,11 @@ Utochpad 由两部分组成：一个 Windows 服务和驱动组件，以及一�
 
 1. 按 `Win+L` 锁定 Windows，点击锁屏上的 **Utochpad** 磁贴。
 2. 手机 App 保持前台，指纹通过后自动登录。
-3. 回到桌面，手机会自动连接并转为横屏，直接进入触控板页面。
+3. 登录后手机保持连接，直接继续当触控板用——连接只取决于 App 是否在前台，与锁屏状态无关。
 
 ## 使用
+
+连上电脑后，触控板与旋钮会一直可用，和 Windows 是否锁屏无关；只有在手机 App 切到后台、网络中断或解除配对时才会断开。
 
 **触控板**
 
@@ -103,7 +102,6 @@ Utochpad 由两部分组成：一个 Windows 服务和驱动组件，以及一�
 **设置**
 
 - 右上角“设置”打开独立设置页；打开或返回设置页不会断开电脑连接。
-- 手机 App **必须保持前台**。锁屏或切到后台会断开会话——这是 Android 生物识别提示的限制，也是本设计的安全前提。
 
 ## 控制面板
 
@@ -114,7 +112,7 @@ Utochpad 由两部分组成：一个 Windows 服务和驱动组件，以及一�
 - **维护**：查看服务与输入组件状态、端口、地址、数据目录与日志目录，重启输入组件或解除配对。
 - **关于**：查看应用说明与控制面板、后台服务版本。
 
-面板使用 Tauri 2 + Vue 3 实现，开发与构建方式见 [docs/building.md](docs/building.md)；与服务的管道协议见 [docs/architecture.md](docs/architecture.md)。
+面板使用 Tauri 2 + Vue 3 实现；开发与构建见 [docs/building.md](docs/building.md)，与服务的管道协议见 [docs/architecture.md](docs/architecture.md)。
 
 ## 安全
 
@@ -163,18 +161,9 @@ utouchpad/
 | 控制面板 | Tauri 2 · Vue 3 · Rust |
 | 虚拟 USB 设备 | Go · VIIPER · usbip-win2 |
 
-## 从源码构建
-
-```powershell
-.\Windows\installer\build-installer.ps1                                  # 完整安装包
-dotnet build Windows\Service\Utochpad.slnx -c Release -p:Platform=x64    # 仅构建 C# 侧
-```
-
-构建 VIIPER、构建控制面板、生成 Android APK、以及全部参数说明见 [docs/building.md](docs/building.md)。
-
 ## 已知限制
 
-- 手机 App 仅在前台工作，这是 Android 生物识别与隐私限制决定的。
+- 手机 App 仅在前台工作，锁屏或切到后台即断开会话（Android 生物识别与隐私限制）。
 - 触控板手势由 Windows 解释，不同 Windows 版本的手势集合可能略有差异。
 - 依赖 VIIPER 与 usbip-win2；Windows 大版本更新后如失效，优先更新这两个组件。
 - 不支持多手机、多用户或公网远程访问。
@@ -192,18 +181,10 @@ dotnet build Windows\Service\Utochpad.slnx -c Release -p:Platform=x64    # 仅�
 
 ## 图标与版权
 
-### 品牌与界面图标
+- 品牌标识：`brand/utochpad-logo.svg`。
+- 锁屏磁贴：矢量源 `brand/utouchpad_CP_icon.vectorcraft`，导出 `Windows/Service/Utochpad.CredentialProvider/Resources/TileIconWhite.png`（登录）与 `TileIconBlack.png`（解锁），256×256，作为嵌入资源编译进 `Utochpad.CredentialProvider.dll`。
 
-- `brand/utochpad-logo.svg` 是 Utochpad 主标识；控制面板的应用图标由 `bun run tauri icon` 从它生成（见 [docs/building.md](docs/building.md)）。
-- `brand/utouchpad_CP_icon.vectorcraft` 是凭据提供程序磁贴图标的矢量源文件。
-
-### 凭据提供程序磁贴图标
-
-锁屏磁贴上的图标是 `Windows/Service/Utochpad.CredentialProvider/Resources/` 下的 `TileIconWhite.png`（登录场景）与 `TileIconBlack.png`（解锁及 CredUI 场景）：256×256、32 位 ARGB 的 PNG，作为 `EmbeddedResource` 编译进 `Utochpad.CredentialProvider.dll`，由 `UtochpadCP.GetControls` 按资源名读取。
-
-改动图标时，`Utochpad.CredentialProvider.csproj` 的 `EmbeddedResource`、`UtochpadCP.cs` 里的资源名字符串、以及矢量源文件三处要一起更新，否则运行时抛 `Failed to load embedded resource`。
-
-**版权与许可**：磁贴图标以 Microsoft 的 [Fluent UI System Icons](https://github.com/microsoft/fluentui-system-icons) 为基础，重新组合并调整笔画与比例后栅格化。
+磁贴图标以 Microsoft 的 [Fluent UI System Icons](https://github.com/microsoft/fluentui-system-icons) 为基础重新组合：
 
 ```
 Fluent UI System Icons
@@ -211,6 +192,4 @@ Copyright (c) 2020 Microsoft Corporation
 Licensed under the MIT License.
 ```
 
-MIT 允许商用、修改与再分发，条件是保留上述版权与许可声明；完整许可文本随安装包分发，见 `Windows/installer/THIRD-PARTY-NOTICES.txt`。MIT 只授予版权许可，不授予商标许可：Utochpad 与 Microsoft 无关联、未获其背书，`Windows`、`Surface`、`Segoe`、`Fluent` 是 Microsoft 集团公司的商标。
-
-**设计约束**：磁贴出现在 LogonUI 上，必须与 Windows Hello 自带的指纹磁贴有明显区别，避免被误认为系统组件；图标为单色、透明背景，由 LogonUI 缩放到磁贴尺寸，256px 源图在高 DPI 下可直接降采样。
+MIT 全文随安装包分发，见 `Windows/installer/THIRD-PARTY-NOTICES.txt`。MIT 不授予商标许可；Utochpad 与 Microsoft 无关联，`Windows`、`Surface`、`Segoe`、`Fluent` 为其商标。

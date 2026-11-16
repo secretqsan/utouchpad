@@ -1,0 +1,3 @@
+[submodule "Windows/Service/Lithnet.CredentialProvider"]
+	path = Windows/Service/Lithnet.CredentialProvider
+	url = https://github.com/lithnet/windows-credential-provider.git

@@ -8,13 +8,13 @@ Get-Content "$env:ProgramData\Utochpad\logs\service-*.log" -Tail 80
 
 ## 锁屏看不到 Utochpad 磁贴
 
-- 确认以管理员身份运行过安装包或 `install.ps1`，且 `HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Authentication\Credential Providers\{FDF19A17-3800-34D6-B49A-CAE0D53ACA8F}` 存在。
+- 确认以管理员身份运行过安装包，且 `HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Authentication\Credential Providers\{FDF19A17-3800-34D6-B49A-CAE0D53ACA8F}` 存在。
 - 确认 `%ProgramFiles%\Utochpad\CP\Utochpad.CredentialProvider.comhost.dll` 存在，并安装了 .NET 10 Runtime。
 - 注销或重启后再看；LogonUI 会缓存已加载的 CP。
 
 ## 控制面板没有安装或无法启动
 
-- `install.ps1` 默认使用 bun + Rust 构建 Tauri 面板；缺少工具链时会提示。可安装 bun 与 Rust（MSVC toolchain）后重试，或用 `-PanelExe` 指定已构建的 `Utochpad.exe`。
+- 面板由构建时的 Tauri 构建打进安装包；`%ProgramFiles%\Utochpad\Panel\Utochpad.exe` 缺失时重新运行安装包。构建面板需要 bun 与 Rust（MSVC），或用 `build-installer.ps1 -PanelExe` 复用已构建的产物。
 - 确认 `%ProgramFiles%\Utochpad\Panel\Utochpad.exe` 存在；Windows 11 自带 WebView2 Runtime，未自带 WebView2 的系统需要单独安装。
 - 查看 `%ProgramData%\Utochpad\logs\service-*.log` 中的服务侧错误。
 
@@ -27,10 +27,9 @@ Get-Content "$env:ProgramData\Utochpad\logs\service-*.log" -Tail 50
 
 ## 锁屏凭据提供程序显示“Utochpad 服务未运行”，但服务确实在运行
 
-- 这几乎总是 CP 打不开 `\\.\pipe\utochpad-cp`，而不是服务进程没启动。CP 通常以 SYSTEM 身份加载进 LogonUI，但部分配置下会以当前交互用户的身份运行。管道的 DACL 为 SYSTEM/Administrators 完全控制、Authenticated Users 读写，连接超时为 5 秒；安装不完整或服务未重新注册时，CP 仍可能在 `Connect` 阶段失败，只能显示“服务未运行”。
-- 请以管理员身份重新运行安装包或 `install.ps1`（或至少重新安装服务）后再试。
-- 服务还会拒绝来自非活动控制台会话的连接（远程桌面或快速用户切换下的其他会话）。如果是在 RDP 会话里解锁，请在控制台会话中操作。
-- 仍失败时，CP 会在 `%ProgramData%\Utochpad\logs\cp-*.log` 里记录管道名、用户名与会话 ID 的异常，可按该信息继续排查。
+- 多数是 CP 打不开 `\\.\pipe\utochpad-cp`（服务未重新注册、安装不完整，或 CP 没有以 SYSTEM 身份加载），而不是服务进程没起来。以管理员身份重跑安装包后再试。
+- 服务会拒绝非活动控制台会话（远程桌面、快速用户切换下的其他会话），在 RDP 里解锁请在控制台会话操作。
+- 仍失败时看 `%ProgramData%\Utochpad\logs\cp-*.log`，里面有管道名、用户名与会话 ID。
 
 ## 手机连不上电脑
 
@@ -46,9 +45,9 @@ Get-Content "$env:ProgramData\Utochpad\logs\service-*.log" -Tail 50
 
 - 是否安装了 usbip-win2 驱动。
 - 面板里点“重启 VIIPER”，或看 `service-*.log` 中 `viiper:` 开头的行。
-- 触控板的 `ptp` 与旋钮的 `radial` 会同时挂到同一条虚拟总线上；总线在进入输入页时创建一次，断开手机或退出时销毁。
-- 手势不生效时，先确认 Windows 已把设备识别为精密触控板：日志出现 `Windows accepted the precision touchpad device`，或 VIIPER 设备状态中 `ptpActive=true`。
-- 只有指针能动、双指滚动或三指手势没反应，通常说明报告描述符里后续触点没有重新声明 `USAGE_PAGE (Digitizers)`（见 [architecture.md](architecture.md#触控板--radial) 中关于 `USAGE_PAGE (Digitizers)` 的说明）。
+- `ptp` 与 `radial` 挂在同一条虚拟总线上，进入输入页时创建、断开或退出时销毁。
+- 手势不生效时先确认 Windows 已把它识别为精密触控板：日志出现 `Windows accepted the precision touchpad device`，或 VIIPER 状态里 `ptpActive=true`。
+- 只有指针能动、双指或三指手势无效，通常是报告描述符里后续触点没有重新声明 `USAGE_PAGE (Digitizers)`，见 [architecture.md](architecture.md#触控板--radial)。
 
 ## 发送密码失败
 
