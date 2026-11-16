@@ -15,7 +15,6 @@
 ### Android
 
 - Android 8.1（API 27）及以上，已录入指纹，与电脑处于同一局域网且路由器未开启 AP 隔离。
-- 输入页会持有低延迟 Wi-Fi 锁（API 29+ 用 `WIFI_MODE_FULL_LOW_LATENCY`），避免 Wi-Fi 省电把触控帧攒到唤醒时成批送达。
 
 ## 构建与安装（Windows）
 
@@ -27,7 +26,7 @@
 .\Windows\installer\build-installer.ps1
 ```
 
-输出 `artifacts\installer\Utochpad-Setup-<version>.exe`。中文向导会写入服务、凭据提供程序、控制面板与 `viiper.exe`，注册服务与 COM 宿主、添加防火墙规则（TCP 42800，专用/域网络），并检测 USBip 驱动。构建需要 .NET 10 SDK、bun、Rust（MSVC）、Go 1.27+ 与 Inno Setup 7；首次构建会下载固定版本的 VIIPER 上游源码，之后复用 `.build\` 缓存。
+输出 `.build\installer\Utochpad-Setup-<version>.exe`。中文向导会写入服务、凭据提供程序、控制面板与 `viiper.exe`，注册服务与 COM 宿主、添加防火墙规则（TCP 42800，专用/域网络），并检测 USBip 驱动。构建需要 .NET 10 SDK、bun、Rust（MSVC）、Go 1.27+ 与 Inno Setup 7；首次构建会下载固定版本的 VIIPER 上游源码，之后复用 `.build\` 缓存。
 
 安装包**不内置** WebView2、.NET 10 Runtime 和 USBip 驱动：Windows 11 自带 WebView2，其余缺失时会在运行时或安装完成页提示。
 
@@ -35,7 +34,7 @@
 
 ```powershell
 .\Windows\installer\build-installer.ps1 -PanelExe "D:\build\Utochpad.exe"   # 复用已构建的面板
-.\Windows\installer\build-installer.ps1 -SkipViiper                        # 复用 artifacts\viiper\viiper.exe
+.\Windows\installer\build-installer.ps1 -SkipViiper                        # 复用 .build\viiper\viiper.exe
 .\Windows\installer\build-installer.ps1 -Version 1.1.0
 ```
 
@@ -47,8 +46,8 @@
 
 ```powershell
 .\Windows\installer\build-installer.ps1
-.\artifacts\installer\Utochpad-Setup-<version>.exe                               # 向导安装
-.\artifacts\installer\Utochpad-Setup-<version>.exe /VERYSILENT /SUPPRESSMSGBOXES  # 无人值守
+.\.build\installer\Utochpad-Setup-<version>.exe                               # 向导安装
+.\.build\installer\Utochpad-Setup-<version>.exe /VERYSILENT /SUPPRESSMSGBOXES  # 无人值守
 ```
 
 - 安装与卸载都走安装包：卸载在“设置 → 应用 → Utochpad”，会询问是否保留配对数据；命令行可用 `"%ProgramFiles%\Utochpad\unins000.exe" /VERYSILENT`。
@@ -61,13 +60,13 @@
 仓库只保存覆盖层（`Windows/viiper/`）。脚本按 `Windows/viiper/VIIPER_VERSION` 下载上游 commit，应用覆盖层后编译：
 
 ```powershell
-.\Windows\installer\build-viiper.ps1          # 输出 artifacts\viiper\viiper.exe
+.\Windows\installer\build-viiper.ps1          # 输出 .build\viiper\viiper.exe
 .\Windows\installer\build-viiper.ps1 -Test    # 同时运行 ptp / radial 设备测试
 ```
 
 - 首次构建需要网络，之后复用 `.build\` 缓存。
 - 升级 VIIPER：把 `VIIPER_VERSION` 改成新的完整 commit SHA 重新构建即可；覆盖层是新增文件，不改上游源码。
-- `artifacts/`、`.build/` 都已忽略，不会进版本库。
+- 所有构建产物集中在仓库根目录 `.build/`，已忽略，不会进版本库。
 
 ## 控制面板（Tauri）
 
@@ -77,12 +76,12 @@
 cd Windows\panel
 bun install
 bun run tauri dev            # 需要 UtochpadService 已运行
-bun run build                # 只构建前端到 dist/
+bun run build                # 只构建前端到 ../../.build/panel-dist/
 bun run tauri build --no-bundle
 ```
 
 - 需要 Rust 1.85+（MSVC）、bun 与 WebView2 Runtime（Windows 11 自带）。
-- 构建产物：`Windows\panel\src-tauri\target\release\Utochpad.exe`。`bundle.active=false`，不生成 MSI/NSIS，面板由安装包负责安装。
+- 构建产物：`.build\panel-target\release\Utochpad.exe`。`bundle.active=false`，不生成 MSI/NSIS，面板由安装包负责安装。
 - 面板通过 `\\.\pipe\utochpad-ui` 调用 C# 服务，协议见 [architecture.md](architecture.md#控制面板ui-管道)。
 - 应用图标由 `brand/utochpad-logo.svg` 通过 `bun run tauri icon` 生成；界面固定浅色（Tailwind CSS 4），不做深色模式。
 
@@ -102,9 +101,9 @@ cd Android
 .\gradlew.bat :app:assembleDebug
 ```
 
-输出 `Android\app\build\outputs\apk\debug\app-debug.apk`。发布前先在 `Android/app/build.gradle.kts` 里配置自己的签名，再执行 `assembleRelease`。
+输出 `.build\android\app\outputs\apk\debug\app-debug.apk`。发布前先在 `Android/app/build.gradle.kts` 里配置自己的签名，再执行 `assembleRelease`。
 
 ## 相关文档
 
 - 组件划分与协议：[architecture.md](architecture.md)
-- 安装后遇到问题：[troubleshooting.md](troubleshooting.md)
+- 安装后遇到问题：见 [README 的故障排查](../README.md#故障排查)

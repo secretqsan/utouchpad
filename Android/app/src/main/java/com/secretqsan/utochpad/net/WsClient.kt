@@ -38,13 +38,8 @@ interface WsListener {
     fun onModeError(mode: String, message: String)
 }
 
-/**
- * OkHttp does not enable TCP_NODELAY. With one small binary frame per pointer
- * sample, Nagle's algorithm can hold a frame back until the previous one is
- * acknowledged; on Wi-Fi that turns smooth motion into bursts tens of
- * milliseconds apart. A socket factory is the only hook that runs before
- * OkHttp connects.
- */
+// OkHttp does not enable TCP_NODELAY, and Nagle holds small pointer frames back
+// on Wi-Fi. A socket factory is the only hook before OkHttp connects.
 private object NoDelaySocketFactory : SocketFactory() {
     override fun createSocket(): Socket = Socket().apply { tcpNoDelay = true }
 
@@ -93,21 +88,14 @@ class WsClient(
     private val ready = CompletableDeferred<Result<Unit>>()
     private val closed = AtomicBoolean(false)
 
-    // All encrypted frames leave through one thread. The UI thread never does
-    // AES work or touches OkHttp's writer queue, which keeps dragging a finger
-    // on the pad from competing with rendering.
+    // Frames leave through one thread so AES work never competes with rendering.
     private val sendExecutor = Executors.newSingleThreadExecutor { runnable ->
         Thread(runnable, "utochpad-ws-send").apply { isDaemon = true }
     }
 
-    // A PTP frame is a complete snapshot of every contact, so a frame that only
-    // moves fingers may be superseded by a newer one. A frame that changes the
-    // contact set may not: Windows turns a tap into a click only when it sees
-    // the Tip bit fall while the contact is still in the report, and that
-    // transition exists in exactly one frame. The queue therefore coalesces
-    // only consecutive frames with the same contact layout and keeps every
-    // transition, so a frame carrying Tip=1 or Tip=0 can never be overwritten
-    // before it is sent.
+    // Position-only frames may be superseded by a newer snapshot; a frame that
+    // changes the contact set may not, because Windows sees a tap in exactly
+    // one Tip transition frame.
     private val ptpLock = Any()
     private val ptpQueue = ArrayDeque<PtpFrame>()
     private val ptpDrainScheduled = AtomicBoolean(false)
@@ -355,11 +343,8 @@ class WsClient(
     }
 
     /**
-     * Sends every queued snapshot in order. There is no rate limiter: the queue
-     * already collapses redundant motion frames, so the send rate follows the
-     * touch sampling rate. Pacing here used to sleep the (single) sender thread,
-     * which added up to 4 ms to each frame and could delay control messages
-     * behind the sleep.
+     * Sends every queued snapshot in order. The queue already collapses
+     * redundant motion, so there is no rate limiter here.
      */
     private fun schedulePtpDrain() {
         if (!ptpDrainScheduled.compareAndSet(false, true)) return
@@ -381,11 +366,7 @@ class WsClient(
 
     private fun hasPendingPtp(): Boolean = synchronized(ptpLock) { ptpQueue.isNotEmpty() }
 
-    /**
-     * Identity of the contact set carried by a snapshot: contact count, buttons
-     * and every slot's contact id and flags. Coordinates are excluded, so two
-     * frames with the same layout differ only by finger position.
-     */
+    /** Identity of a snapshot's contact set; coordinates are excluded. */
     private fun ptpLayout(frame: ByteArray): Long {
         var hash = 1_125_899_906_842_597L
         hash = hash * 31 + frame[0]

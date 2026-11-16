@@ -12,8 +12,8 @@ import (
 	"github.com/Alia5/VIIPER/device/ptp"
 	"github.com/Alia5/VIIPER/internal/server/api"
 	"github.com/Alia5/VIIPER/internal/server/api/handler"
-	"github.com/Alia5/VIIPER/viiperclient"
 	"github.com/Alia5/VIIPER/usbip"
+	"github.com/Alia5/VIIPER/viiperclient"
 	"github.com/Alia5/VIIPER/virtualbus"
 	"github.com/stretchr/testify/assert"
 
@@ -123,9 +123,8 @@ func TestInputReports(t *testing.T) {
 
 const scanTimeOffset = 1 + ptp.MaxContacts*6
 
-// The device stamps each report with real elapsed time so Windows can derive
-// contact velocity, so the caller cannot predict the exact Scan Time bytes.
-// Poll until a frame matches on every other field, then compare the rest.
+// The device stamps each report with wall-clock time, so the caller cannot
+// predict the Scan Time bytes. Poll until everything else matches.
 func pollReportIgnoringScanTime(
 	client *viiperTesting.TestUsbIpClient,
 	conn net.Conn,
@@ -359,10 +358,8 @@ func TestHandleControlFeatureReports(t *testing.T) {
 	})
 }
 
-// TestReportPacing checks that interrupt reports are spaced by the scan period
-// instead of being answered as fast as the host re-submits URBs. Without the
-// pacing the host sees 1200-2000 reports per second, which is faster than the
-// declared 1 ms endpoint interval and makes Windows drop tap transitions.
+// TestReportPacing checks that reports are spaced by the scan period: without
+// pacing the host sees 1200-2000 reports per second and drops tap transitions.
 func TestReportPacing(t *testing.T) {
 	t.Setenv("VIIPER_PTP_SCAN_MS", "")
 
@@ -398,8 +395,7 @@ func TestReportPacing(t *testing.T) {
 	}
 }
 
-// TestReportPacingDisabled checks the escape hatch used while diagnosing: a
-// zero interval answers every transfer immediately.
+// TestReportPacingDisabled checks that a zero interval answers immediately.
 func TestReportPacingDisabled(t *testing.T) {
 	t.Setenv("VIIPER_PTP_SCAN_MS", "0")
 

@@ -7,8 +7,7 @@ using Utochpad.Service.Protocol;
 namespace Utochpad.Service;
 
 /// <summary>
-/// Named-pipe endpoint used by the credential provider inside LogonUI.
-/// The provider sends one unlock request and waits for one response.
+/// Named-pipe endpoint used by the credential provider: one request, one response.
 /// </summary>
 public sealed class CpPipeServer : BackgroundService
 {
@@ -21,11 +20,6 @@ public sealed class CpPipeServer : BackgroundService
         _logger = logger;
     }
 
-    // The credential provider is normally loaded into LogonUI as SYSTEM, but
-    // on some configurations it runs with the interactive user's token. The
-    // default named-pipe DACL only grants the creating process's identity,
-    // which made the CP fail with "service is not running" before it could
-    // even send its request. An explicit DACL keeps both cases working.
     protected override Task ExecuteAsync(CancellationToken stoppingToken) =>
         PipeServerRunner.RunAsync(
             UtochpadConstants.PipeCp,
@@ -42,11 +36,8 @@ public sealed class CpPipeServer : BackgroundService
     private static extern uint WTSGetActiveConsoleSessionId();
 
     /// <summary>
-    /// The pipe DACL has to admit the interactive user because some
-    /// configurations host the credential provider under that token. Restrict
-    /// the accepted clients to the console session (the locked user) and
-    /// session 0 (SYSTEM/services) so another logged-in user's session cannot
-    /// ask the phone for the console user's password.
+    /// The DACL admits the interactive user, so restrict clients to the console
+    /// session and session 0; another user's session must not unlock the console.
     /// </summary>
     private bool IsClientSessionAllowed(NamedPipeServerStream pipe)
     {

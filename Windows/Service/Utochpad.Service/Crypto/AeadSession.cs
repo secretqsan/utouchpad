@@ -3,18 +3,15 @@ using System.Security.Cryptography;
 namespace Utochpad.Service.Crypto;
 
 /// <summary>
-/// One direction of an AES-256-GCM session. Frame layout:
-/// [12-byte counter nonce][ciphertext][16-byte tag].
-/// The counter starts at zero for every session, which is safe because each
-/// session uses freshly derived keys and each direction has its own key.
+/// One direction of an AES-256-GCM session:
+/// [12-byte counter nonce][ciphertext][16-byte tag]. Fresh keys per session and
+/// per direction let the counter start at zero without nonce reuse.
 /// </summary>
 public sealed class AeadSession
 {
     private readonly AesGcm _aes;
-    // AesGcm is not documented as thread-safe. Each direction normally has a
-    // single producer, but the lock is cheap and keeps misuse from producing
-    // interleaved counter values. The instance itself is reused: allocating a
-    // new AesGcm per 32-byte touch frame was a measurable source of GC churn.
+    // AesGcm is not documented as thread-safe; the lock is cheap and a reused
+    // instance avoids GC churn on 32-byte touch frames.
     private readonly object _gate = new();
     private long _counter;
     private long _lastReceived = -1;

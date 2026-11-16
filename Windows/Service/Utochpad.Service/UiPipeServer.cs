@@ -4,8 +4,7 @@ using Utochpad.Service.Protocol;
 namespace Utochpad.Service;
 
 /// <summary>
-/// Local administration endpoint for the control panel. Authenticated users may
-/// query status, start pairing and push the Windows password to the phone.
+/// Local administration endpoint for the control panel.
 /// </summary>
 public sealed class UiPipeServer : BackgroundService
 {

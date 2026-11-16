@@ -54,15 +54,9 @@ import kotlin.math.min
 import kotlin.math.sin
 
 /**
- * Landscape input page.
- *
- * The whole screen is the touchpad: a soft, single-colour sheet with gentle
- * dual shadows. Status and settings float on that sheet as raised capsules, and
- * the radial dial floats over the pad on the right edge, vertically centred.
- *
- * The pad forwards every finger to Windows as a raw PTP contact. The app does
- * not recognize taps, scrolls, pinches or multi-finger swipes; Windows sees the
- * same contact stream a physical precision touchpad would produce.
+ * Landscape input page: the whole screen is the pad, with the radial knob on
+ * the right. Every finger is forwarded as a raw PTP contact; Windows decides
+ * whether it was a tap, a scroll or a swipe.
  */
 @Composable
 fun TouchpadScreen(
@@ -79,11 +73,8 @@ fun TouchpadScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .pointerInput(Unit) {
-                    // Compose delivers every pointer of every batched input
-                    // frame here, including the pointer-up that ends a
-                    // gesture. The pad does no gesture recognition: each
-                    // finger is forwarded as a raw PTP contact and Windows
-                    // decides whether it is a tap, a scroll or a swipe.
+                    // Every frame is forwarded, including the pointer-up that
+                    // ends a gesture; the pad does no gesture recognition.
                     awaitPointerEventScope {
                         while (true) {
                             val event = awaitPointerEvent(PointerEventPass.Main)
@@ -93,8 +84,8 @@ fun TouchpadScreen(
                 },
         )
 
-        // Printed elements are siblings above the pad. Only the settings
-        // button and the dial consume touches; the labels never block the pad.
+        // Overlay elements are siblings above the pad; only the settings button
+        // and the dial consume touches.
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -136,24 +127,13 @@ fun TouchpadScreen(
     }
 }
 
-/**
- * Radial controller drawn as the radial ring found on drawing tablets.
- *
- * Two concentric parts with independent roles:
- *  - the outer annulus rotates the visual ring and sends relative dial deltas;
- *  - the inner disc is the radial button.
- *
- * There is no pointer inside: the inner disc only carries subtly recessed
- * concentric circles. Rotation and the button can be used at the same time,
- * each finger keeping its own role for the whole gesture.
- */
+/** Radial ring: the outer annulus sends relative dial deltas, the inner disc is the button. */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun RadialKnob(controller: UtochpadController, modifier: Modifier = Modifier) {
     var knobSize by remember { mutableStateOf(IntSize.Zero) }
     var pressed by remember { mutableStateOf(false) }
-    // 0 = raised, 1 = fully sunk. Animating the two drawings into each other
-    // keeps the press a soft material movement rather than a hard swap.
+    // 0 = raised, 1 = fully sunk.
     val press by animateFloatAsState(
         targetValue = if (pressed) 1f else 0f,
         animationSpec = tween(durationMillis = 120),
@@ -287,10 +267,8 @@ private fun RadialKnob(controller: UtochpadController, modifier: Modifier = Modi
             val discRadius = outerRadius - 1.dp.toPx()
             val buttonRadius = outerRadius * 0.53f
 
-            // Neumorphic dual shadow. Each side is a blurred copy of the same
-            // disc, offset by the same distance in opposite directions. The
-            // alpha transition is centred on the disc edge, so the shadow hugs
-            // the disc instead of forming a detached ring.
+            // Neumorphic dual shadow: the same disc blurred and offset in
+            // opposite directions, with the alpha edge centred on the disc rim.
             val shadowOffset = 5.dp.toPx()
             val shadowBlur = 8.dp.toPx()
             val shadowRadius = discRadius + shadowBlur
@@ -321,8 +299,7 @@ private fun RadialKnob(controller: UtochpadController, modifier: Modifier = Modi
                 Color.White.copy(alpha = soft.knobShadowLight),
             )
 
-            // Raised soft face: barely lighter than the base sheet, lit from
-            // the upper left.
+            // Raised soft face, lit from the upper left.
             drawCircle(
                 brush = Brush.linearGradient(
                     colors = listOf(soft.knobFaceTop, soft.knobFaceMid, soft.knobFaceBottom),
@@ -333,9 +310,8 @@ private fun RadialKnob(controller: UtochpadController, modifier: Modifier = Modi
                 center = c,
             )
 
-            // A few soft ticks on the rotating outer ring. There is no
-            // index mark: the radial reports relative rotation only, so an
-            // absolute orientation would carry no information.
+            // Ticks on the rotating ring. There is no index mark: the radial
+            // protocol only carries relative rotation.
             rotate(angleDegrees, pivot = c) {
                 val tickCount = 12
                 val tickOuter = discRadius - 9.dp.toPx()
@@ -361,10 +337,8 @@ private fun RadialKnob(controller: UtochpadController, modifier: Modifier = Modi
                 }
             }
 
-            // Inner radial button, neumorphic: a smaller disc raised on the
-            // ring by its own light/dark shadow pair, sunken when held.
-            // Separation comes only from the soft shadows, never from a drawn
-            // outline or groove.
+            // Inner button, raised by its own shadow pair and sunken when held.
+            // Separation comes only from the soft shadows, never an outline.
             val buttonShadowOffset = 3.dp.toPx()
             val buttonShadowBlur = 5.dp.toPx()
             val shadowDirection = Offset(buttonShadowOffset, buttonShadowOffset)
@@ -388,9 +362,8 @@ private fun RadialKnob(controller: UtochpadController, modifier: Modifier = Modi
                 )
             }
 
-            // While raised the button casts a soft shadow onto the ring. That
-            // shadow fades out as the button sinks instead of disappearing in
-            // one frame.
+            // The raised shadow fades out as the button sinks instead of
+            // disappearing in one frame.
             if (press < 1f) {
                 val raised = 1f - press
                 buttonShadow(
@@ -417,13 +390,9 @@ private fun RadialKnob(controller: UtochpadController, modifier: Modifier = Modi
             )
 
             if (press > 0f) {
-                // Sunken state: a proper neumorphic inner shadow, i.e. a thin
-                // soft crescent hugging one inner wall, not a wash across the
-                // whole disc. The gradient centre is pushed to the opposite
-                // side, so alpha grows toward the far rim; its radius ends
-                // exactly on that rim while the transparent part stops one
-                // blur-width short of it. Only a narrow band is therefore
-                // shaded, and the drawn circle clips it to the button.
+                // Sunken state: a soft crescent hugging the inner wall. Pushing
+                // the gradient centre to the opposite side keeps only a narrow
+                // band shaded; the drawn circle clips it to the button.
                 val insetRadius = buttonRadius + shadowDistance
                 val insetStart = (1f - buttonShadowBlur / insetRadius).coerceIn(0f, 0.9f)
 
@@ -447,8 +416,8 @@ private fun RadialKnob(controller: UtochpadController, modifier: Modifier = Modi
                     )
                 }
 
-                // Light from the upper left: the upper-left inner wall falls
-                // into shadow, the lower-right inner wall catches the light.
+                // Light from the upper left: the upper-left wall falls into
+                // shadow, the lower-right wall catches the light.
                 insetShadow(
                     shadowDirection,
                     Color.Black,
@@ -466,10 +435,6 @@ private fun RadialKnob(controller: UtochpadController, modifier: Modifier = Modi
 
 private const val ButtonZoneFraction = 0.55f
 
-// ---------------------------------------------------------------------------
-// Raw touch input
-// ---------------------------------------------------------------------------
-
 /** How long a lifted contact stays in the report with Tip=0 before removal. */
 private const val LiftHoldMillis = 32L
 
@@ -480,11 +445,9 @@ private class PadState {
     private val byPointer = LinkedHashMap<Long, PadContact>()
 
     /**
-     * Records the current position of a finger. Returns true when the report
-     * would change.
-     *
-     * A new finger first drops contacts that are still hovering from a previous
-     * lift, so they can never take a contact slot away from a real finger.
+     * Records the current position of a finger and returns true when the report
+     * would change. A new finger first drops contacts still hovering from a
+     * previous lift so they cannot take a slot from a real finger.
      */
     fun update(pointerId: Long, x: Int, y: Int): Boolean {
         val existing = byPointer[pointerId]
@@ -505,8 +468,7 @@ private class PadState {
 
     /**
      * Marks the contact as lifted but keeps it in the report for a few frames,
-     * which is what a real precision touchpad does when a finger leaves the
-     * surface. The contact is removed from the report afterwards.
+     * which is what a real touchpad reports when a finger leaves the surface.
      */
     fun release(pointerId: Long): PadContact? {
         val contact = byPointer[pointerId] ?: return null
@@ -516,9 +478,9 @@ private class PadState {
     }
 
     /**
-     * Removes a contact after the Tip=0 report has been visible for a while.
-     * The identity check makes a late removal harmless if the same pointer id
-     * has already started a new contact.
+     * Removes a contact after the Tip=0 report was visible. The identity check
+     * makes a late removal harmless if the pointer id already started a new
+     * contact.
      */
     fun drop(pointerId: Long, contact: PadContact): Boolean {
         if (byPointer[pointerId] !== contact) return false
@@ -532,18 +494,14 @@ private class PadState {
     fun snapshot(): List<Contact> =
         byPointer.values
             .sortedBy { it.id }
-            // A lifted contact keeps Confidence=1 for the Tip=0 frame: the
-            // finger is still in range, it just is not touching any more.
+            // A lifted contact keeps Confidence=1: it is still in range.
             .map { Contact(it.id, it.x, it.y, tip = it.tip, confidence = true) }
 }
 
 /**
- * Forwards one Compose pointer event as a complete PTP snapshot.
- *
- * Every pressed pointer is written at its current position. A pointer that was
- * pressed in the previous event and is no longer pressed stays in the snapshot
- * with Tip=0 for [LiftHoldMillis], after which it is removed and another
- * snapshot is sent.
+ * Forwards one Compose pointer event as a complete PTP snapshot. A pointer that
+ * was pressed in the previous event stays in the snapshot with Tip=0 for
+ * [LiftHoldMillis], after which it is removed and another snapshot is sent.
  */
 private fun handlePadPointerEvent(
     event: PointerEvent,
@@ -552,10 +510,8 @@ private fun handlePadPointerEvent(
     controller: UtochpadController,
     scope: CoroutineScope,
 ) {
-    // A new finger takes over the slot of a contact that is still being
-    // reported with Tip=0 (update() drops those). Windows only turns the lift
-    // into a click when it has seen that Tip=0 frame, so flush it before the
-    // snapshot that replaces it.
+    // A new finger reuses the slot of a contact still reported with Tip=0.
+    // Flush that frame first: Windows needs to see it to turn the lift into a click.
     val newPress = event.changes.any { it.pressed && !it.previousPressed }
     if (newPress && state.hasLiftedContact()) {
         controller.sendTouchFrame(state.snapshot())

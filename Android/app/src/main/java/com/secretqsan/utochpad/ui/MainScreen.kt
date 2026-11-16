@@ -52,8 +52,8 @@ fun MainScreen(controller: UtochpadController, state: AppUiState) {
             .softBackground(),
     ) {
         when {
-            // Connecting to the PC and preparing the input devices share one
-            // screen; only the status line differs while loading.
+            // Connecting and preparing the devices share one screen; only the
+            // status line differs.
             !connected -> LoadingOverlay(
                 status = (state.connection as? ConnState.Disconnected)?.reason
                     ?: "正在连接电脑…",
@@ -69,8 +69,8 @@ fun MainScreen(controller: UtochpadController, state: AppUiState) {
             )
         }
 
-        // Settings stays reachable on every screen, including while the app is
-        // stuck waiting for the PC, so the pairing can always be cleared.
+        // Settings stays reachable even while the app waits for the PC, so the
+        // pairing can always be cleared.
         SettingsCorner {
             context.startActivity(Intent(context, SettingsActivity::class.java))
         }
@@ -124,8 +124,7 @@ fun MainScreen(controller: UtochpadController, state: AppUiState) {
 
 /**
  * One loading screen for both wait states: reaching the PC and preparing the
- * input devices. The spinner is the same soft-raised treatment either way, and
- * [retry] is only passed once an attempt has failed.
+ * input devices. [retry] is only passed once an attempt has failed.
  */
 @Composable
 private fun LoadingOverlay(status: String, retry: (() -> Unit)? = null) {
@@ -168,8 +167,7 @@ private fun LoadingOverlay(status: String, retry: (() -> Unit)? = null) {
             modifier = Modifier.widthIn(max = 520.dp),
         )
 
-        // Only after a failed attempt: a retry button while loading is dead
-        // weight on the screen.
+        // Only after a failed attempt: a retry button while loading is dead weight.
         if (retry != null) {
             Spacer(Modifier.height(16.dp))
             SoftButton(

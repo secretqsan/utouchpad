@@ -7,6 +7,6 @@
   -->
   <PropertyGroup Condition="'$(MSBuildProjectName)' == 'Lithnet.CredentialProvider'">
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <PackageOutputPath>$(MSBuildThisFileDirectory)..\..\artifacts\nuget\</PackageOutputPath>
+    <PackageOutputPath>$(MSBuildThisFileDirectory)..\..\.build\nuget\</PackageOutputPath>
   </PropertyGroup>
 </Project>

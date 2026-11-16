@@ -5,18 +5,15 @@ import (
 	"io"
 )
 
-// Contact is a single finger on the touchpad surface.
+// Contact is one finger on the touchpad surface.
 type Contact struct {
-	// ID identifies the contact across consecutive frames. Windows uses it to
-	// track a finger, so it must stay stable while the finger rests. The report
-	// descriptor declares an 8-bit field; this device only emits IDs 0..4, one
-	// per concurrent contact.
+	// ID must stay stable while the finger rests; Windows tracks contacts by it.
 	ID uint8
-	// Tip is true while the finger is in contact with the surface.
+	// Tip is true while the finger touches the surface.
 	Tip bool
-	// Confidence is true for a finger (as opposed to a palm or stray touch).
+	// Confidence is true for a finger rather than a palm or stray touch.
 	Confidence bool
-	// X, Y are absolute coordinates in the 0..LogicalMax logical range.
+	// X, Y are absolute coordinates in the 0..LogicalMax range.
 	X, Y uint16
 }
 
@@ -24,28 +21,21 @@ type Contact struct {
 //
 // viiper:wire ptp c2s contactCount:u8 buttons:u8 contacts:u8*(6)
 type InputState struct {
-	// Contacts holds the active contacts; only the first ContactCount entries
-	// are transmitted.
+	// Only the first ContactCount entries are transmitted.
 	Contacts [MaxContacts]Contact
-	// ContactCount is the number of valid entries in Contacts. It must not
-	// exceed MaxContacts: Windows discards an entire frame that reports more
-	// contacts than the declared maximum.
+	// ContactCount must not exceed MaxContacts: Windows discards the whole frame.
 	ContactCount uint8
-	// Buttons is a bitfield for the physical pad buttons:
-	// bit 0 = left, bit 1 = right, bit 2 = middle.
+	// Buttons: bit 0 = left, bit 1 = right, bit 2 = middle.
 	Buttons uint8
-	// ScanTime is a monotonically increasing 16-bit scan timestamp. Windows
-	// derives contact velocity from it, so it must advance between frames.
+	// ScanTime must advance between frames; Windows derives velocity from it.
 	ScanTime uint16
 }
 
 // NewInputState returns a touchpad input state with no contacts.
 func NewInputState() *InputState { return &InputState{} }
 
-// buildContactBytes encodes one contact into its 6 HID report bytes.
-//
-// Layout: flags(1) contactID(1) x(2) y(2). The flags byte carries Confidence in
-// bit 0 and Tip Switch in bit 1; bits 2..7 are padding.
+// buildContactBytes encodes one contact as flags(1) id(1) x(2) y(2); the flags
+// byte carries Confidence in bit 0 and Tip in bit 1.
 func buildContactBytes(c Contact) [hidContactSize]byte {
 	var b [hidContactSize]byte
 	if c.Confidence {
@@ -60,15 +50,8 @@ func buildContactBytes(c Contact) [hidContactSize]byte {
 	return b
 }
 
-// BuildReport encodes the state into the full HID input report.
-//
-// Report layout (35 bytes, report ID included):
-//
-//	[0]      Report ID (ReportIDTouchpad)
-//	[1..31]  MaxContacts * 6 contact bytes; the offsets are computed below.
-//	[31..33] Scan Time
-//	[33]     Contact Count
-//	[34]     Buttons
+// BuildReport encodes the state into the full 35-byte HID input report:
+// reportID(1) contacts(N*6) scanTime(2) count(1) buttons(1).
 func (m *InputState) BuildReport() []byte {
 	b := make([]byte, reportSize)
 	b[0] = ReportIDTouchpad
@@ -87,19 +70,16 @@ func (m *InputState) BuildReport() []byte {
 	// Scan Time: relative timing of this frame.
 	binary.LittleEndian.PutUint16(b[off:off+2], m.ScanTime)
 	off += 2
-	// Contact Count: number of contacts reported in this frame.
 	b[off] = m.ContactCount
 	off++
-	// Buttons (3 bits data + 5 bits padding).
+	// Three data bits plus five padding bits.
 	b[off] = m.Buttons & 0x07
 
 	return b
 }
 
-// MarshalBinary encodes InputState into its wire representation.
-//
-// Layout: contactCount(1) buttons(1) then MaxContacts slots of
-// id(1) flags(1) x(2) y(2), little-endian.
+// MarshalBinary encodes InputState as contactCount(1) buttons(1) then contact
+// slots of id(1) flags(1) x(2) y(2), little-endian.
 func (m *InputState) MarshalBinary() ([]byte, error) {
 	b := make([]byte, wireSize)
 	b[0] = m.ContactCount

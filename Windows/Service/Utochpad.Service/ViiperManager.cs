@@ -9,12 +9,8 @@ using Utochpad.Service.Protocol;
 namespace Utochpad.Service;
 
 /// <summary>
-/// Owns the VIIPER server process and the currently attached virtual devices.
-///
-/// The phone exposes a touchpad surface and a radial knob on the same screen,
-/// so both HID devices have to be usable at once. They are attached to a single
-/// virtual USB bus, each with its own control stream. A mode switch tears the
-/// bus down and recreates the devices it needs.
+/// Owns the VIIPER server process and the attached virtual devices. Both HID
+/// devices share one virtual USB bus and keep their own control stream.
 /// </summary>
 public sealed class ViiperManager : IAsyncDisposable
 {
@@ -235,11 +231,7 @@ public sealed class ViiperManager : IAsyncDisposable
         }
     }
 
-    /// <summary>
-    /// Writes one complete device frame. PTP frames go to the precision
-    /// touchpad stream, radial frames to the radial controller stream, so both
-    /// devices can receive input concurrently.
-    /// </summary>
+    /// <summary>Writes one complete device frame to its own control stream.</summary>
     public async Task<bool> WriteFrameAsync(byte payloadType, ReadOnlyMemory<byte> frame)
     {
         var expected = payloadType switch

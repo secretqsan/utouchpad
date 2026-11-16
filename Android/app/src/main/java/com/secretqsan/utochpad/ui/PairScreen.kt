@@ -80,11 +80,8 @@ private fun friendlyPairError(ex: Throwable?): String {
 }
 
 /**
- * Pairing page, landscape only.
- *
- * One mark, one name, one action, stacked down the centre of the sheet.
- * Manual code entry lives in a dialog, so opening it can never push the page
- * past the bottom of a phone held sideways.
+ * Pairing page, landscape only: one mark, one action. Manual code entry lives
+ * in a dialog so it cannot push the page past the bottom of the screen.
  */
 @Composable
 fun PairScreen(controller: UtochpadController, state: AppUiState) {

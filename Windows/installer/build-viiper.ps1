@@ -12,7 +12,7 @@
     Updating VIIPER means changing the SHA in Windows\viiper\VIIPER_VERSION.
 
 .PARAMETER OutDir
-    Output directory. Default: artifacts\viiper
+    Output directory. Default: .build\viiper
 
 .PARAMETER Version
     Version string embedded in the binary.
@@ -62,7 +62,7 @@ $sha = $sha.ToLowerInvariant()
 $shortSha = $sha.Substring(0, 7)
 if (-not $Version) { $Version = "utochpad-$shortSha" }
 
-if (-not $OutDir) { $OutDir = Join-Path $repoRoot 'artifacts\viiper' }
+if (-not $OutDir) { $OutDir = Join-Path $repoRoot '.build\viiper' }
 $OutDir = [System.IO.Path]::GetFullPath($OutDir)
 $outExe = Join-Path $OutDir 'viiper.exe'
 

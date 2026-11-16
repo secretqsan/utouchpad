@@ -4,18 +4,9 @@ import (
 	"github.com/Alia5/VIIPER/usb"
 )
 
-// reportDescriptorBytes is the HID report descriptor for a Windows radial
-// controller, taken verbatim from the Microsoft sample "Integrated Radial
-// Controller TLC":
-// https://learn.microsoft.com/en-us/windows-hardware/design/component-guidelines/radial-controller-sample-report-descriptors
-//
-// A top-level collection of Generic Desktop / System Multi-Axis Controller
-// (0x01/0x0E) containing Button 1 and a relative Dial is what makes Windows
-// classify the device as a wheel (Surface Dial style) device.
-//
-// The X / Y / Width padding fields from the Microsoft sample are omitted: they
-// only describe an on-screen puck position (Surface Studio style), are optional,
-// and would make every report 10 bytes instead of 2.
+// reportDescriptorBytes follows the Microsoft "Integrated Radial Controller"
+// sample. The sample's X/Y/Width padding is omitted: it only describes an
+// on-screen puck position and would make every report 10 bytes instead of 2.
 var reportDescriptorBytes = usb.Data{
 	0x05, 0x01, //       USAGE_PAGE (Generic Desktop)
 	0x09, 0x0e, //       USAGE (System Multi-Axis Controller)
@@ -46,11 +37,9 @@ var reportDescriptorBytes = usb.Data{
 	0xc0, //             END_COLLECTION
 }
 
-// MakeDescriptor returns the USB descriptor for a Windows radial controller.
-//
-// The interface deliberately uses HID subclass 0 and protocol 0 (no boot
-// subclass): boot-protocol handling would interfere with the report ID and the
-// vendor-defined top-level collection Windows expects for a wheel device.
+// MakeDescriptor returns the USB descriptor for a radial controller. HID
+// subclass/protocol 0 avoids boot handling, which would interfere with the
+// report ID and the top-level collection Windows expects.
 func MakeDescriptor() usb.Descriptor {
 	return usb.Descriptor{
 		Device: usb.DeviceDescriptor{

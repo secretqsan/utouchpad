@@ -4,26 +4,15 @@ import (
 	"github.com/Alia5/VIIPER/usb"
 )
 
-// contactReportItems returns the HID items describing one finger contact.
-//
-// This is the per-contact block of the Microsoft sample descriptor
-// (https://learn.microsoft.com/en-us/windows-hardware/design/component-guidelines/touchpad-sample-report-descriptors)
-// unchanged: Confidence + Tip Switch bits, six bits of padding to the next byte
-// boundary, an 8-bit Contact Identifier, then 16-bit X and Y.
-//
-// The field width matters. An earlier version packed the identifier into the
-// three leftover bits after Tip/Confidence (a legal but non-standard layout);
-// Windows bound the driver and moved the pointer, but gesture processing did
-// not work. The Microsoft sample and every shipping precision touchpad use a
-// full byte here, so stay bit-for-bit compatible with them.
+// contactReportItems returns the per-contact block of the Microsoft sample
+// descriptor. Keep it bit-for-bit compatible: a packed 3-bit contact identifier
+// still moves the pointer, but Windows never recognises multi-finger gestures.
 func contactReportItems() []byte {
 	return []byte{
 		// The previous contact block ends on the Generic Desktop page (X/Y), so
-		// the digitizer page has to be restored before the next finger's
-		// Confidence/Tip/Contact Identifier usages. Without this every contact
-		// after the first declares 0x01:0x47, 0x01:0x42 and 0x01:0x51 instead of
-		// 0x0D:0x47, 0x0D:0x42 and 0x0D:0x51: Windows then has exactly one valid
-		// contact, the pointer moves, and no multi-touch gesture is ever possible.
+		// the digitizer page must be restored here. Without it, later contacts
+		// declare 0x01:0x47/0x42/0x51 instead of 0x0D:*, and Windows sees only
+		// one valid contact (pointer moves, gestures never work).
 		0x05, 0x0d, //           USAGE_PAGE (Digitizers)
 		0x09, 0x22, //           USAGE (Finger)
 		0xa1, 0x02, //           COLLECTION (Logical)
@@ -60,16 +49,9 @@ func contactReportItems() []byte {
 	}
 }
 
-// buildReportDescriptor assembles the complete report descriptor.
-//
-// Two top-level collections are mandatory for a precision touchpad: the
-// Touch Pad collection carrying multitouch input plus the capabilities and
-// certification feature reports, and the Configuration collection carrying the
-// Input Mode feature report that tells the device which collection to report
-// through. A mouse collection is intentionally omitted: declaring one without
-// implementing mouse reports would give Windows a collection that never
-// produces data, and the absence of pointer motion is a clearer signal during
-// bring-up that precision touchpad mode was not entered.
+// buildReportDescriptor assembles the complete report descriptor. A precision
+// touchpad needs the Touch Pad and Configuration top-level collections; the
+// mouse collection is present only because the sample descriptor declares it.
 func buildReportDescriptor() usb.Data {
 	d := usb.Data{
 		0x05, 0x0d, // USAGE_PAGE (Digitizers)
@@ -124,10 +106,8 @@ func buildReportDescriptor() usb.Data {
 		0x25, 0x0f, //                   LOGICAL_MAXIMUM (15)
 		0xb1, 0x02, //                   FEATURE (Data,Var,Abs)
 
-		// Device Certification Status (PTPHQA): a 256-byte vendor-defined blob.
-		// Windows 10+ only requires that the usage exists and that 256 bytes are
-		// returned; the blob does not have to be signed. Windows 8.1 did require
-		// a signed blob, which is out of scope here.
+		// Device Certification Status (PTPHQA). Windows 10+ only requires the
+		// usage and 256 bytes back; the blob need not be signed.
 		0x06, 0x00, 0xff, //             USAGE_PAGE (Vendor Defined)
 		0x85, ReportIDPTPHQA, //         REPORT_ID (PTPHQA)
 		0x09, 0xc5, //                   USAGE (Vendor Usage 0xC5)
@@ -204,11 +184,9 @@ func buildReportDescriptor() usb.Data {
 	return d
 }
 
-// MakeDescriptor returns the USB descriptor for a precision touchpad.
-//
-// The interface uses HID subclass 0 / protocol 0 (no boot subclass): boot
-// protocol handling would bypass the report-ID based collections Windows needs
-// to drive precision touchpad mode.
+// MakeDescriptor returns the USB descriptor for a precision touchpad. HID
+// subclass/protocol 0 avoids boot handling, which would bypass the report-ID
+// based collections Windows needs.
 func MakeDescriptor() usb.Descriptor {
 	return usb.Descriptor{
 		Device: usb.DeviceDescriptor{

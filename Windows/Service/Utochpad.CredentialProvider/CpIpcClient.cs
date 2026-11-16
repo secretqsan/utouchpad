@@ -6,8 +6,7 @@ using Serilog;
 namespace Utochpad.CredentialProvider;
 
 /// <summary>
-/// The credential provider runs inside LogonUI in the SYSTEM session. It talks
-/// to the always-on service through a machine-wide named pipe.
+/// Runs inside LogonUI; talks to the service through a machine-wide named pipe.
 /// </summary>
 internal static class CpIpcClient
 {

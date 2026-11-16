@@ -9,12 +9,8 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 
 /**
- * Owns the single controller for the whole process.
- *
- * The controller must outlive individual activities: opening the settings
- * screen must not tear down the WebSocket or the virtual devices. Its
- * start/stop lifecycle is therefore tied to the process (all activities), not
- * to MainActivity.
+ * Owns the controller for the process, so a screen change never tears down the
+ * connection or the virtual devices.
  */
 class UtochpadApplication : Application() {
     lateinit var controller: UtochpadController

@@ -10,23 +10,19 @@ import (
 	"github.com/Alia5/VIIPER/usbip"
 )
 
-// Radial implements the usb.Device interface for a Windows radial controller
-// (Surface Dial style wheel device).
+// Radial is a Windows radial controller HID device.
 type Radial struct {
 	// notify wakes a waiting interrupt transfer when a state is queued.
 	notify chan struct{}
-	// queueMu guards pending. Dial deltas are relative, so a frame waiting for
-	// the host poll cannot simply be replaced by a newer one: that would lose
-	// rotation the user actually performed. Deltas of consecutive frames are
-	// accumulated instead.
+	// queueMu guards pending. Dial deltas are relative, so queued frames
+	// accumulate instead of replacing each other.
 	queueMu    sync.Mutex
 	pending    []InputState
 	descriptor usb.Descriptor
 
 	stateMu sync.Mutex
-	// lastState is the most recent state pushed by the feeder. It is used to
-	// re-emit button state on poll timeouts while making sure a relative dial
-	// delta is only ever reported once.
+	// lastState re-emits button state on poll timeouts without repeating a dial
+	// delta that was already consumed.
 	lastState InputState
 }
 
@@ -47,11 +43,10 @@ func New(o *device.CreateOptions) (*Radial, error) {
 	return r, nil
 }
 
-// UpdateInputState pushes a new state to the device. It never blocks.
+// UpdateInputState pushes a new state. It never blocks.
 //
-// Because the dial is relative, a state that is still waiting for the host to
-// poll it is merged with the new one instead of being discarded: dropping it
-// would silently lose rotation.
+// A state still waiting for the host is merged by adding dial deltas: dropping
+// it would silently lose rotation.
 func (r *Radial) UpdateInputState(state InputState) {
 	r.queueMu.Lock()
 	if n := len(r.pending); n > 0 {
@@ -94,13 +89,9 @@ func (r *Radial) popPending() (InputState, bool) {
 	return state, true
 }
 
-// HandleTransfer implements interrupt IN transfers for the radial controller.
-//
-// The dial field is relative, so the report returned on a poll timeout must not
-// carry the previously reported rotation: the server re-issues the last cache
-// on timeout for some paths, and repeating a relative delta would make Windows
-// accumulate rotation the user never performed. A timeout therefore yields a
-// neutral frame that preserves only the button state.
+// HandleTransfer implements interrupt IN transfers. A poll timeout yields a
+// neutral frame that keeps only the button state: repeating the last dial delta
+// would make Windows accumulate rotation the user never performed.
 func (r *Radial) HandleTransfer(ctx context.Context, ep uint32, dir uint32, out []byte) []byte {
 	if dir != usbip.DirIn || ep != 1 {
 		return nil
@@ -133,8 +124,7 @@ func (r *Radial) GetDescriptor() *usb.Descriptor {
 	return &r.descriptor
 }
 
-// GetDeviceSpecificArgs returns device-specific creation arguments. The radial
-// controller has none.
+// GetDeviceSpecificArgs returns no radial-specific creation arguments.
 func (r *Radial) GetDeviceSpecificArgs() map[string]any {
 	return map[string]any{}
 }

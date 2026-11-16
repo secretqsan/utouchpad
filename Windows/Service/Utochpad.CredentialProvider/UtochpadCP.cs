@@ -74,10 +74,8 @@ public class UtochpadTile : CredentialTile3
     }
 
     /// <summary>
-    /// The tile only contains a logo and a label: there is no text field and no
-    /// submit button for the user to press. Selecting the tile is therefore the
-    /// complete user action, so tell the host to serialize the credential right
-    /// away. GetCredentials then sends the unlock request to the phone.
+    /// The tile has no text field or submit button, so selecting it is the whole
+    /// user action and the credential must be serialized immediately.
     /// </summary>
     protected override bool OnSelectedShouldAutoLogon() => true;
 

@@ -15,9 +15,8 @@ import com.secretqsan.utochpad.ui.SystemBarsAppearance
 import com.secretqsan.utochpad.ui.theme.UtochpadTheme
 
 /**
- * Settings is a separate activity so it can have its own window and back stack
- * entry. The controller lives in the application, so opening this activity does
- * not interrupt the phone session.
+ * Settings has its own window and back stack entry. The controller lives in the
+ * application, so opening it does not interrupt the phone session.
  */
 class SettingsActivity : FragmentActivity() {
     private val controller: UtochpadController

@@ -31,6 +31,15 @@
 | `Windows/viiper` | 对 VIIPER 的自定义设备（`ptp`、`radial`），构建时覆盖到固定版本的上游源码 |
 | `Windows/installer` | Inno Setup 安装包（`Utochpad.iss`、`build-installer.ps1`）与 `build-viiper.ps1` |
 | `Android` | Compose 手机应用：配对、指纹解锁、横屏触控板 + Radial、独立设置页 |
+| `brand` | 品牌资源 |
+
+| 组件 | 技术 |
+| --- | --- |
+| Android 应用 | Kotlin · Jetpack Compose · Android Keystore |
+| Windows 服务 | C# · .NET 10 · LocalSystem Windows 服务 |
+| 凭据提供程序 | COM · Lithnet.CredentialProvider · .NET 10 |
+| 控制面板 | Tauri 2 · Vue 3 · Rust |
+| 虚拟 USB 设备 | Go · VIIPER · usbip-win2 |
 
 服务以 `LocalSystem` 运行，因此锁屏界面（LogonUI，SYSTEM 会话）也能通过命名管道请求手机验证。控制面板只是普通用户界面，不参与解锁。
 
@@ -79,24 +88,13 @@
 - `ptp`：Windows Precision Touchpad，最多 5 个同时触点；
 - `radial`：Windows Radial Controller（Surface Dial），按键 + 相对旋转。
 
-两个设备由 VIIPER 自动附加到 usbip-win2，因此手指和旋钮可以同时使用。之后手机直接发送原始设备帧：
+两个设备由 VIIPER 自动附加到 usbip-win2，因此手指和旋钮可以同时使用。之后手机直接发送原始设备帧：PTP 触点快照（最多 5 个触点）与 Radial 相对旋转量。
 
-- PTP（32 字节）：`contactCount(1) | buttons(1) | 5 × [id(1) flags(1) x(u16 LE) y(u16 LE)]`
-- Radial（3 字节）：`dial(i16 LE, 0.1°) | buttons(1)`
-
-PTP 帧是**完整状态快照**：手机每次采样都发出所有手指的 ID、坐标和 Tip/Confidence，服务不做手势识别也不改写触点；手机端只把 Compose 的原始指针事件编码成 PTP。点击、滚动、捏合、三指切换桌面等手势全部由 Windows 从触点流判定。
+PTP 帧是**完整状态快照**：手机每次采样都发出所有手指的 ID、坐标和 Tip/Confidence，服务不做手势识别也不改写触点。点击、滚动、捏合、三指切换桌面等手势全部由 Windows 从触点流判定。
 
 输入模式与锁屏状态无关：`enterMode` 只要求手机已连接，锁屏、登录、切换用户都不会拆除设备；只有手机断线或解除配对时 `PhoneHub` 才调用 `LeaveAsync`。
 
-以下几条不能随便改：
-
-- **抬起要留一帧**：手指抬起时先发一帧 Tip=0 的快照并保持约 32ms，再把触点移除，让 Windows 看到明确的“离开”事件。
-- **报告节流**：USBIP 的 URB 完成得比端点声明的 `BInterval=1ms` 还快，不节流会跑到 1200–2000 Hz，远超 Windows 触控板栈的 8ms 节奏，轻点会丢（实测命中率只有 60–78%）。`ptp` 因此按 4ms 一个周期发放报告（`DefaultScanPeriod`，可用 `VIIPER_PTP_SCAN_MS` 覆盖，0 关闭），250Hz 下命中率 100%、抬起→点击延迟约 9ms。
-- **每个 finger collection 都要重新声明 `USAGE_PAGE (Digitizers)`**：usage page 是全局状态，上一根手指的 X/Y 会把它切走，声明错后续触点会被解析成别的 usage，Windows 只认第一个触点（指针能动、多指手势全失效）。`descriptor_test.go` 会断言这一点。
-- **只合并触点集合相同的帧**：触点出现、抬起或消失的那一帧必须逐帧送达，否则会丢掉判定点击的唯一过渡帧。手机队列与 VIIPER 队列都按此规则合并。
-- **相对量要相加**：`radial` 的 `dial` 是相对值，合并待发帧时相加而非替换。上报帧的 Scan Time 由 VIIPER 按真实时间填写（100µs 单位），用固定增量会让滑动惯性和手势阈值失真。
-
-界面上没有左/右键实体按键，点击由 Windows 从触点流判定。声明的物理表面约为横屏手机的 **6.40 × 3.00 英寸**。
+界面没有左/右键实体按键，点击由 Windows 从触点流判定。声明的物理表面约为横屏手机的 **6.40 × 3.00 英寸**。设备侧的帧格式与不可随意改动的时序约束见 `Windows/viiper/device/ptp`、`Windows/viiper/device/radial` 的源码注释。
 
 ## 端口、文件与日志
 

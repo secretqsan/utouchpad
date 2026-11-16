@@ -17,9 +17,8 @@ object Protocol {
     const val MAX_CONTACTS = 5
 
     /**
-     * The phone page contains the touchpad surface and the radial knob at the
-     * same time. The service attaches both virtual devices to one USB bus so
-     * both payload types can be streamed concurrently.
+     * The page holds a touchpad and a radial knob; both virtual devices live on
+     * one USB bus so both payload types can stream at once.
      */
     const val MODE_INPUT = "touchpad+radial"
 
@@ -58,8 +57,6 @@ object Protocol {
                 repeat(6) { buffer.put(0) }
             } else {
                 // Wire order matches the Go device: id(1) flags(1) x(2) y(2).
-                // The HID descriptor declares a full-byte Contact Identifier,
-                // so IDs are sent as-is (0..4 in practice).
                 buffer.put((contact.id and 0xFF).toByte())
                 var flags = 0
                 if (contact.confidence) flags = flags or FLAG_CONFIDENCE
@@ -87,12 +84,8 @@ object Protocol {
 }
 
 /**
- * One PTP contact.
- *
- * [tip] is false for the single frame that reports a finger coming off the
- * surface. Windows needs to observe Tip Switch drop to 0 to turn the contact
- * into a tap or to end a gesture; a contact that simply disappears is treated
- * as a lost contact and produces no click.
+ * One PTP contact. [tip] is false for the single frame that reports a finger
+ * leaving: Windows needs that transition to turn the lift into a tap.
  */
 data class Contact(
     val id: Int,

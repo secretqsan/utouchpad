@@ -18,7 +18,7 @@
   <a href="#使用">使用</a> ·
   <a href="docs/architecture.md">工作原理</a> ·
   <a href="docs/building.md">从源码构建</a> ·
-  <a href="docs/troubleshooting.md">故障排查</a>
+  <a href="#故障排查">故障排查</a>
 </p>
 
 ---
@@ -62,13 +62,7 @@ Utochpad 由两部分组成：一个 Windows 服务和驱动组件，以及一�
 .\Windows\installer\build-installer.ps1
 ```
 
-生成的 `artifacts\installer\Utochpad-Setup-<version>.exe` 是带中文向导的安装包，运行它会注册服务、凭据提供程序和控制面板；无人值守安装用 `/VERYSILENT /SUPPRESSMSGBOXES`，卸载在“设置 → 应用”里。
-
-只构建 C# 侧：
-
-```powershell
-dotnet build Windows\Service\Utochpad.slnx -c Release -p:Platform=x64
-```
+生成的 `.build\installer\Utochpad-Setup-<version>.exe` 是带中文向导的安装包，运行它会注册服务、凭据提供程序和控制面板；无人值守安装用 `/VERYSILENT /SUPPRESSMSGBOXES`，卸载在“设置 → 应用”里。
 
 详细的构建要求、参数以及 VIIPER、控制面板和 Android APK 的构建方式见 [docs/building.md](docs/building.md)。
 
@@ -112,13 +106,10 @@ dotnet build Windows\Service\Utochpad.slnx -c Release -p:Platform=x64
 - **维护**：查看服务与输入组件状态、端口、地址、数据目录与日志目录，重启输入组件或解除配对。
 - **关于**：查看应用说明与控制面板、后台服务版本。
 
-面板使用 Tauri 2 + Vue 3 实现；开发与构建见 [docs/building.md](docs/building.md)，与服务的管道协议见 [docs/architecture.md](docs/architecture.md)。
-
 ## 安全
 
 - 局域网内的所有业务数据都用 **AES-256-GCM** 加密；配对使用 ECDH 与双向 HMAC 证明。
-- Windows 密码**只在手机**保存：密码由随机 PDK 加密，PDK 由 Android Keystore 中的指纹密钥包裹。
-- 电脑端不持久化密码；凭据提供程序只在内存中以 `SecureString` 交给 Windows。
+- Windows 密码**只在手机**保存，由 Android Keystore 中的指纹密钥保护；电脑端不落盘。
 - 配对 token 一次性、5 分钟有效；手机校验服务公钥，防止连到假服务器。
 - 未配对的设备无法建立会话；服务只接受活动控制台会话的解锁请求。
 
@@ -126,40 +117,7 @@ dotnet build Windows\Service\Utochpad.slnx -c Release -p:Platform=x64
 
 ## 工作原理
 
-```
-┌──────────── Android ────────────┐          ┌──────────────────── Windows ────────────────────┐
-│                                 │          │                                                 │
-│  指纹解锁 / 触控板 / Surface Dial │◄─ Wi-Fi ─►│  UtochpadService (SYSTEM)                       │
-│                                 │ WebSocket│    ├─ 凭据提供程序 (LogonUI)                      │
-└─────────────────────────────────┘  加密帧   │    ├─ 控制面板 (Tauri)                           │
-                                             │    └─ VIIPER ──► 虚拟 USB 总线 ──► PTP + Radial  │
-                                             └─────────────────────────────────────────────────┘
-```
-
-Windows 看到的是两块标准 USB 设备，因此所有手势、Radial 交互都走 Windows 原生栈，而不是在应用层模拟。协议细节、HID 报告描述符和时序设计见 [docs/architecture.md](docs/architecture.md)。
-
-## 项目结构
-
-```
-utouchpad/
-├─ Android/       # Compose 手机应用：配对、指纹解锁、触控板 + Radial
-├─ Windows/
-│  ├─ Service/    # C# 服务、凭据提供程序、共享协议
-│  ├─ panel/      # Tauri 2 + Vue 3 控制面板
-│  ├─ installer/  # 安装包与构建脚本
-│  └─ viiper/     # VIIPER 的 ptp / radial 设备覆盖层
-├─ brand/         # 品牌资源
-├─ docs/          # 架构、安全、构建与故障排查文档
-└─ artifacts/     # 构建产物（不入库）
-```
-
-| 组件 | 技术 |
-| --- | --- |
-| Android 应用 | Kotlin · Jetpack Compose · Android Keystore |
-| Windows 服务 | C# · .NET 10 · LocalSystem Windows 服务 |
-| 凭据提供程序 | COM · Lithnet.CredentialProvider · .NET 10 |
-| 控制面板 | Tauri 2 · Vue 3 · Rust |
-| 虚拟 USB 设备 | Go · VIIPER · usbip-win2 |
+手机把原始触点和旋钮旋转加密后发给电脑，电脑通过 VIIPER + usbip-win2 把它们变成两块标准 USB HID 设备。Windows 因此用原生触控板与 Radial 栈识别手势，而不是在应用层模拟。协议与实现细节见 [docs/architecture.md](docs/architecture.md)。
 
 ## 已知限制
 
@@ -170,7 +128,64 @@ utouchpad/
 - 首次配对要求手机能直接访问电脑的局域网 IP。
 - 解锁需要账户**密码**（本地账户或 Microsoft 账户），Windows Hello PIN 不适用。
 
-遇到问题先看 [docs/troubleshooting.md](docs/troubleshooting.md)；日志位于 `%ProgramData%\Utochpad\logs`。
+## 故障排查
+
+日志位于 `%ProgramData%\Utochpad\logs`（`service-*.log`、`cp-*.log`），默认只允许 SYSTEM 与管理员读取，请用管理员权限的终端查看：
+
+```powershell
+Get-Content "$env:ProgramData\Utochpad\logs\service-*.log" -Tail 80
+```
+
+### 锁屏看不到 Utochpad 磁贴
+
+- 确认以管理员身份运行过安装包，且 `HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Authentication\Credential Providers\{FDF19A17-3800-34D6-B49A-CAE0D53ACA8F}` 存在。
+- 确认 `%ProgramFiles%\Utochpad\CP\Utochpad.CredentialProvider.comhost.dll` 存在，并安装了 .NET 10 Runtime。
+- 注销或重启后再看；LogonUI 会缓存已加载的 CP。
+
+### 控制面板没有安装或无法启动
+
+- `%ProgramFiles%\Utochpad\Panel\Utochpad.exe` 缺失时重新运行安装包。
+- Windows 11 自带 WebView2 Runtime，未自带的系统需要单独安装。
+- 查看 `%ProgramData%\Utochpad\logs\service-*.log` 中的服务侧错误。
+
+### 面板显示“服务未运行”
+
+```powershell
+Get-Service UtochpadService
+Get-Content "$env:ProgramData\Utochpad\logs\service-*.log" -Tail 50
+```
+
+### 锁屏凭据提供程序显示“Utochpad 服务未运行”，但服务确实在运行
+
+- 多数是 CP 打不开 `\\.\pipe\utochpad-cp`（服务未重新注册、安装不完整，或 CP 没有以 SYSTEM 身份加载），而不是服务进程没起来。以管理员身份重跑安装包后再试。
+- 服务会拒绝非活动控制台会话（远程桌面、快速用户切换下的其他会话），在 RDP 里解锁请在控制台会话操作。
+- 仍失败时看 `%ProgramData%\Utochpad\logs\cp-*.log`，里面有管道名、用户名与会话 ID。
+
+### 手机连不上电脑
+
+- **Android 16/17 的“本地网络”权限**：从 Android 16 开始，应用访问 192.168.x.x 等局域网地址需要 `ACCESS_LOCAL_NETWORK` 权限；未授权时系统会静默丢弃数据包，表现为约 6 秒的连接超时，但手机浏览器却能打开电脑端口。
+  - 首次启动 App 时请允许“本地网络 / 附近的设备”权限；
+  - 若已拒绝：设置 → 应用 → Utochpad → 权限 → 本地网络（或“附近的设备”）→ 允许。
+- 手机与电脑是否同一网段；路由器是否开启 AP 隔离/访客网络。
+- 防火墙是否放行 TCP 42800（专用/域网络）。
+- 在面板上重新“开始配对”，确认二维码中的 IP 是电脑当前局域网地址。
+- 手机 App 必须在前台；切后台会主动断开。
+
+### 触控板 / Radial 无法启动
+
+- 是否安装了 usbip-win2 驱动。
+- 面板里点“重启 VIIPER”，或看 `service-*.log` 中 `viiper:` 开头的行。
+- 手势不生效时，先在设备管理器确认 Windows 已把它识别为精密触控板。
+
+### 发送密码失败
+
+- 手机是否已配对并连接（面板“手机”状态为绿色）。
+- 手机上是否已录入指纹；系统指纹不可用时无法保存/解出密码。
+- 若手机提示“指纹已变更”，重新在面板发送一次密码即可。
+
+### 解除配对后手机仍显示旧电脑
+
+- 手机端“设置 → 解除配对”会清空本机配对与密码；电脑端“解除配对”会删除服务端记录。两端都执行一次最干净。
 
 ## 第三方组件
 
@@ -182,9 +197,7 @@ utouchpad/
 ## 图标与版权
 
 - 品牌标识：`brand/utochpad-logo.svg`。
-- 锁屏磁贴：矢量源 `brand/utouchpad_CP_icon.vectorcraft`，导出 `Windows/Service/Utochpad.CredentialProvider/Resources/TileIconWhite.png`（登录）与 `TileIconBlack.png`（解锁），256×256，作为嵌入资源编译进 `Utochpad.CredentialProvider.dll`。
-
-磁贴图标以 Microsoft 的 [Fluent UI System Icons](https://github.com/microsoft/fluentui-system-icons) 为基础重新组合：
+- 锁屏磁贴图标以 Microsoft 的 [Fluent UI System Icons](https://github.com/microsoft/fluentui-system-icons) 为基础重新组合：
 
 ```
 Fluent UI System Icons

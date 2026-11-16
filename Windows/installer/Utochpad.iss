@@ -16,10 +16,10 @@
   #define AppVersionQuad "1.0.0.0"
 #endif
 #ifndef StagingDir
-  #define StagingDir "..\..\artifacts\installer\staging"
+  #define StagingDir "..\..\.build\installer\staging"
 #endif
 #ifndef OutputDir
-  #define OutputDir "..\..\artifacts\installer"
+  #define OutputDir "..\..\.build\installer"
 #endif
 
 #define AppName "Utochpad"

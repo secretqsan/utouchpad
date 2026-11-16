@@ -21,4 +21,4 @@
 ## 进一步阅读
 
 - 配对与会话协议的完整流程见 [architecture.md](architecture.md)。
-- 日志与常见安全相关故障见 [troubleshooting.md](troubleshooting.md)。
+- 日志与常见安全相关故障见 [README 的故障排查](../README.md#故障排查)。

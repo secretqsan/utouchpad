@@ -8,6 +8,10 @@ const host = process.env.TAURI_DEV_HOST;
 export default defineConfig(() => ({
   plugins: [vue(), tailwindcss()],
   clearScreen: false,
+  build: {
+    outDir: "../../.build/panel-dist",
+    emptyOutDir: true,
+  },
   server: {
     port: 1420,
     strictPort: true,

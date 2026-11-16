@@ -45,13 +45,7 @@ import com.secretqsan.utochpad.R
 import com.secretqsan.utochpad.UtochpadController
 import com.secretqsan.utochpad.data.AppTheme
 
-/**
- * Settings screen in the same soft UI language as the rest of the app: one
- * base sheet, raised panels, recessed rows and a soft switch.
- *
- * Everything is still driven by the controller exactly as before; only the
- * presentation changed from the MIUI-style list to neumorphism.
- */
+/** Settings screen in the app's soft UI language. */
 @Composable
 fun SettingsScreen(
     controller: UtochpadController,

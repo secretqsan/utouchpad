@@ -46,15 +46,12 @@ class UtochpadController(app: Application) {
     private val storage = Storage(app)
     private val vault = PasswordVault(storage)
 
-    // Set by UtochpadApplication as activities are resumed. Biometric prompts
-    // are the only part of the controller that needs an Activity.
+    // The only part of the controller that needs an Activity.
     private var currentActivity: FragmentActivity? = null
 
-    // Every touch sample is its own small frame. Android's Wi-Fi power save
-    // parks the radio between DTIM intervals, so buffered frames arrive in
-    // bursts tens of milliseconds late — the occasional "the pad lags for a
-    // moment" symptom. A low-latency Wi-Fi lock keeps the radio awake while the
-    // app is in front.
+    // Android's Wi-Fi power save buffers touch frames between DTIM intervals,
+    // which shows up as occasional lag. A low-latency lock keeps the radio awake
+    // while the app is in front.
     @Suppress("DEPRECATION")
     private val wifiLock: WifiManager.WifiLock? = run {
         val wifi = app.applicationContext.getSystemService(WifiManager::class.java)

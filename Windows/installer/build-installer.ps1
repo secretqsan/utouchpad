@@ -19,13 +19,13 @@
     Use an already built Utochpad.exe instead of running the Tauri build.
 
 .PARAMETER SkipPanel
-    Use Windows\panel\src-tauri\target\release\Utochpad.exe if it exists.
+    Use .build\panel-target\release\Utochpad.exe if it exists.
 
 .PARAMETER SkipViiper
-    Reuse artifacts\viiper\viiper.exe instead of rebuilding it.
+    Reuse .build\viiper\viiper.exe instead of rebuilding it.
 
 .PARAMETER ForceViiper
-    Rebuild viiper.exe even when artifacts\viiper\viiper.exe exists.
+    Rebuild viiper.exe even when .build\viiper\viiper.exe exists.
 
 .PARAMETER Iscc
     Path to ISCC.exe. By default the script searches the usual Inno Setup 6/7
@@ -57,7 +57,7 @@ $serviceProject = Join-Path $windowsRoot 'Service\Utochpad.Service\Utochpad.Serv
 $cpProject = Join-Path $windowsRoot 'Service\Utochpad.CredentialProvider\Utochpad.CredentialProvider.csproj'
 $lithnetProject = Join-Path $windowsRoot 'Service\Lithnet.CredentialProvider\src\Lithnet.CredentialProvider\Lithnet.CredentialProvider.csproj'
 $panelDir = Join-Path $windowsRoot 'panel'
-$artifactsDir = Join-Path $repoRoot 'artifacts\installer'
+$artifactsDir = Join-Path $repoRoot '.build\installer'
 $stagingDir = Join-Path $artifactsDir 'staging'
 
 function Write-Step([string]$Text) {
@@ -206,7 +206,7 @@ if (-not (Test-Path -LiteralPath (Join-Path $cpOut 'Utochpad.CredentialProvider.
 Write-Step '准备控制面板'
 
 $panelOut = Join-Path $stagingDir 'Panel'
-$releaseDir = Join-Path $panelDir 'src-tauri\target\release'
+$releaseDir = Join-Path $repoRoot '.build\panel-target\release'
 $panelSource = $null
 
 if ($PanelExe) {
@@ -245,7 +245,7 @@ Write-Host "  $panelSource"
 # ---------------------------------------------------------------------------
 Write-Step '准备 VIIPER'
 
-$viiperExe = Join-Path $repoRoot 'artifacts\viiper\viiper.exe'
+$viiperExe = Join-Path $repoRoot '.build\viiper\viiper.exe'
 if ($SkipViiper -and -not $ForceViiper) {
     if (-not (Test-Path -LiteralPath $viiperExe)) {
         throw "找不到 $viiperExe。去掉 -SkipViiper，或先运行 Windows\installer\build-viiper.ps1。"

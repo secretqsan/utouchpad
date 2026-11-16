@@ -30,9 +30,8 @@ fun UtochpadApp(controller: UtochpadController) {
 }
 
 /**
- * Keeps the status/navigation bar icons readable after the appearance setting
- * changes. Both activities call `enableEdgeToEdge` at creation, but the theme
- * can be switched while one of them is still alive.
+ * Keeps the system bar icons readable when the appearance setting changes while
+ * an activity is alive.
  */
 @Composable
 internal fun SystemBarsAppearance(darkTheme: Boolean) {

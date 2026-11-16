@@ -20,10 +20,8 @@ sealed interface VaultResult {
 }
 
 /**
- * Stores the Windows password in two layers:
- *   password --AES-GCM--> blob
- *   random PDK --Android Keystore (biometric, auth-per-use)--> wrapped PDK
- * The password can only be decrypted after a successful fingerprint prompt.
+ * Stores the Windows password under two layers: the password is encrypted with
+ * a random PDK, and the PDK is wrapped by a biometric, auth-per-use Keystore key.
  */
 class PasswordVault(private val storage: Storage) {
     @Volatile

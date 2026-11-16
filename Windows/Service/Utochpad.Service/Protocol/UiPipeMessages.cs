@@ -3,9 +3,8 @@ using System.Text.Json;
 namespace Utochpad.Service.Protocol;
 
 /// <summary>
-/// One request sent by the control panel over the UI named pipe. Every
-/// connection carries exactly one request and one response, which keeps the
-/// protocol trivial to debug.
+/// One request over the UI named pipe; every connection carries one request and
+/// one response.
 /// </summary>
 public sealed class PipeRequest
 {

@@ -69,22 +69,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.secretqsan.utochpad.R
 
-/**
- * Visual language for the whole app: soft UI (neumorphism).
- *
- * Everything sits on one flat base colour and is shaped only by a pair of
- * blurred shadows: a light one from the upper left and a dark one toward the
- * lower right. Raised elements draw that pair outside the shape, pressed or
- * recessed elements draw it inside, so surfaces read as pressed out of or sunk
- * into the same sheet of material instead of as separate outlined cards.
- *
- * The shadows use Compose's own drop/inner shadow painters, which rasterise the
- * blur off-screen and work consistently across Android versions.
- *
- * Two complete palettes exist, soft light and soft dark. Everything that draws
- * a surface reads the palette from [LocalSoft], so the appearance setting
- * switches the whole material, not just the Material colours.
- */
+/** Soft UI palette: one base colour shaped only by paired light/dark shadows. */
 @Immutable
 internal data class SoftPalette(
     val isDark: Boolean,
@@ -214,11 +199,8 @@ private fun DrawScope.shapePath(shape: Shape): Path {
 }
 
 /**
- * Soft base sheet with a barely visible diagonal light and an engraved grid.
- *
- * The grid is what makes the sheet read as a physical pad instead of a flat
- * fill: every line is drawn twice, a dark groove wall on the upper-left and a
- * light one on the lower-right, so the lines look pressed into the material.
+ * Soft base sheet with an engraved grid: every line is drawn twice, a dark
+ * groove on the upper-left and a light one on the lower-right.
  */
 @Composable
 internal fun Modifier.softBackground(grid: Boolean = true): Modifier {
@@ -361,13 +343,9 @@ internal fun Modifier.softInset(
 }
 
 /**
- * Button face that animates between raised and pressed.
- *
- * Every button stays the same soft material: the base sheet lifted by one
- * light and one dark shadow. A primary button is not a coloured slab; it is
- * only a little more lifted, with a faint accent tint in the face and accent
- * ink for its label. A saturated gradient would flatten the relief back into
- * an ordinary filled button.
+ * Button face that animates between raised and pressed. A primary button is the
+ * same material, only lifted a little more with accent ink; a saturated fill
+ * would flatten the relief.
  */
 @Composable
 internal fun Modifier.softButtonSurface(
@@ -404,8 +382,7 @@ internal fun Modifier.softButtonSurface(
         )
 
     surface = surface.drawBehind {
-        // Primary and neutral buttons are the same material. The primary one
-        // is only lifted a little more, and its label carries the accent.
+        // The primary button is the same material, just lifted a little more.
         val top = lerp(soft.raisedTop, soft.insetTop, pressed)
         val bottom = lerp(soft.raisedBottom, soft.insetBottom, pressed)
         drawPath(
@@ -450,12 +427,8 @@ internal fun Modifier.softButtonSurface(
 // ---------------------------------------------------------------------------
 
 /**
- * Centred column for whole-sheet messages.
- *
- * A plain centred Column squeezes its last children when they are taller than
- * the landscape sheet, which cut text and made the round spinner ellipsoidal;
- * scrolling keeps every child at its natural size and is invisible while they
- * fit.
+ * Centred column for whole-sheet messages. A plain centered Column squeezes its
+ * last children on the landscape sheet; scrolling keeps them at natural size.
  */
 @Composable
 internal fun SoftCenteredColumn(
@@ -625,10 +598,7 @@ private fun SettingsButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
     }
 }
 
-/**
- * The app's single settings entry point. Every screen pins it to the same
- * corner, so it never moves between the pairing, loading and touchpad pages.
- */
+/** Pins the settings entry point to the same corner on every screen. */
 @Composable
 internal fun SettingsCorner(onClick: () -> Unit) {
     Box(
@@ -729,12 +699,8 @@ internal fun SoftSpinner(
 }
 
 /**
- * Brand mark: the white rounded tile from the app icon, with the wide touchpad
- * raised out of it and the four-point star and guide line on its face.
- *
- * Proportions are taken straight from brand/utochpad-logo.svg (512 x 512). The
- * mark keeps the brand's warm material even when the app is in its dark
- * appearance, the way a printed logo would.
+ * Brand mark, with proportions taken from brand/utochpad-logo.svg. It keeps the
+ * brand's warm material in dark appearance too, like a printed logo.
  */
 @Composable
 internal fun AppMark(modifier: Modifier = Modifier, width: Dp = 80.dp) {

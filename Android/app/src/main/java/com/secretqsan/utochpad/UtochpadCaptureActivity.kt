@@ -3,13 +3,7 @@ package com.secretqsan.utochpad
 import com.journeyapps.barcodescanner.CaptureActivity
 import com.journeyapps.barcodescanner.DecoratedBarcodeView
 
-/**
- * QR scanner screen.
- *
- * zxing's [CaptureActivity] already owns the camera, the decode loop and the
- * runtime camera-permission request; this subclass only swaps in our layout
- * through the supported [CaptureActivity.initializeContent] hook.
- */
+/** QR scanner screen; only swaps in our layout. */
 class UtochpadCaptureActivity : CaptureActivity() {
     override fun initializeContent(): DecoratedBarcodeView {
         setContentView(R.layout.utochpad_capture)

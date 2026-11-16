@@ -5,12 +5,8 @@ import (
 	"testing"
 )
 
-// TestDescriptorContactLayout pins the per-contact HID field layout.
-//
-// Windows accepted the device even when the contact identifier was packed into
-// the three spare bits after Tip/Confidence, but gesture processing did not
-// work. The Microsoft sample descriptor (and every shipping precision
-// touchpad) uses a one-byte identifier, so keep the byte sequence explicit.
+// TestDescriptorContactLayout pins the per-contact layout: a packed 3-bit
+// identifier still moves the pointer, but gestures stop working.
 func TestDescriptorContactLayout(t *testing.T) {
 	desc := MakeDescriptor()
 	if desc.Interfaces == nil || len(desc.Interfaces) != 1 {
@@ -35,14 +31,8 @@ func TestDescriptorContactLayout(t *testing.T) {
 		t.Fatalf("report descriptor does not declare the standard 8-bit contact layout")
 	}
 
-	// Every finger collection has to reopen on the digitizer usage page.
-	//
-	// The block for one contact ends with its X/Y fields, which switch the
-	// current usage page to Generic Desktop. If the next contact block does not
-	// switch back, its Confidence/Tip/Contact Identifier usages are declared as
-	// 0x01:0x47, 0x01:0x42 and 0x01:0x51 - not precision touchpad usages at all.
-	// Windows then recognises exactly one contact: the pointer moves and no
-	// multi-finger gesture ever works.
+	// Every finger collection must reopen on the digitizer page; otherwise a
+	// contact's usages resolve to Generic Desktop and Windows sees one contact.
 	finger := []byte{0x05, 0x0d, 0x09, 0x22, 0xa1, 0x02}
 	if n := bytes.Count(report, finger); n != MaxContacts {
 		t.Fatalf("%d finger collections open on the digitizer page, want %d", n, MaxContacts)

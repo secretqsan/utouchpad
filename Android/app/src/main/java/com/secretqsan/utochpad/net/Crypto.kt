@@ -16,10 +16,7 @@ import javax.crypto.Mac
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
-/**
- * Crypto primitives mirrored by Utochpad.Shared on the PC:
- * NIST P-256 ECDH, HKDF-SHA256, AES-256-GCM and HMAC-SHA256.
- */
+/** Crypto primitives mirrored by Utochpad.Shared on the PC. */
 object Crypto {
     const val NONCE_SIZE = 12
     const val TAG_SIZE = 16

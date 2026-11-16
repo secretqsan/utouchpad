@@ -1,13 +1,8 @@
 package ptp
 
-// samplePTPHQABlob is the device certification status blob published in the
-// Microsoft precision touchpad documentation:
-// https://learn.microsoft.com/en-us/windows-hardware/design/component-guidelines/touchpad-windows-precision-touchpad-collection
-//
-// Windows 10 and later only verify that the usage exists and that 256 bytes are
-// returned; a signed blob is only required for Windows 8.1 compatibility. This
-// sample blob is therefore sufficient for the device to be recognised as a
-// precision touchpad on Windows 10/11.
+// samplePTPHQABlob is the certification blob published in the Microsoft
+// precision touchpad documentation. Windows 10/11 only check that 256 bytes
+// come back, not the signature.
 var samplePTPHQABlob = [256]byte{
 	0xfc, 0x28, 0xfe, 0x84, 0x40, 0xcb, 0x9a, 0x87, 0x0d, 0xbe, 0x57, 0x3c, 0xb6, 0x70, 0x09, 0x88,
 	0x07, 0x97, 0x2d, 0x2b, 0xe3, 0x38, 0x34, 0xb6, 0x6c, 0xed, 0xb0, 0xf7, 0xe5, 0x9c, 0xf6, 0xc2,
