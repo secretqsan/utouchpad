@@ -52,10 +52,26 @@ public sealed class ServiceConfig
                 {
                     throw new InvalidDataException("Config is missing the service key.");
                 }
+
+                // The identity key is DPAPI-wrapped to this machine and the
+                // pairing stores a peer key. Proving that both still unwrap and
+                // parse here keeps connection-time code free of "corrupt
+                // config" branches: whatever fails below is a broken config and
+                // takes the same path as any other corruption.
+                if (config is not null)
+                {
+                    var privateKey = config.GetPrivateKey();
+                    if (config.IsPaired)
+                    {
+                        var pairedPub = Convert.FromBase64String(config.PairedPhonePublicKey!);
+                        CryptoUtil.DerivePairKey(CryptoUtil.DeriveSharedSecret(privateKey, pairedPub));
+                    }
+                }
             }
             catch
             {
-                // A corrupt config is moved aside rather than silently discarded.
+                // A corrupt config — or one whose key material no longer unwraps
+                // on this machine — is moved aside rather than silently discarded.
                 config = null;
                 try { File.Move(path, path + ".bad", overwrite: true); } catch { }
             }

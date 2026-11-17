@@ -25,7 +25,7 @@
 
 ## 这是什么
 
-Utochpad 由两部分组成：一个 Windows 服务和驱动组件，以及一个 Android 应用。手机与电脑在同一局域网内直连，电脑端不需要任何手机厂商的客户端、云账号或互联网连接。
+Utochpad 由两部分组成：一个 Windows 服务和驱动组件，以及一个 Android 应用。手机与电脑在同一局域网内直连；安装前需自行准备所需运行时，安装后日常使用不需要互联网连接，也不需要手机厂商客户端或云账号。
 
 它把手机接入了 Windows 最底层的输入路径：
 
@@ -42,7 +42,7 @@ Utochpad 由两部分组成：一个 Windows 服务和驱动组件，以及一�
 | 🎛 **真的能用 Surface Dial** | 基于 Windows Radial Controller 协议，不是自定义快捷键。 |
 | 🔒 **端到端加密** | ECDH 配对、AES-256-GCM 会话加密、严格计数器，局域网内也不裸奔。 |
 | 🧩 **无需 root，无需刷机** | 手机端就是普通 APK；电脑端通过 VIIPER + usbip-win2 提供虚拟 USB 设备。 |
-| 🇨🇳 **中文安装向导** | 自动安装服务、凭据提供程序、防火墙规则，并提示缺失的系统组件。 |
+| 🇨🇳 **中文安装向导** | 自动安装服务、凭据提供程序、防火墙规则，并检查 USBip 驱动。 |
 
 ## 快速开始
 
@@ -52,7 +52,7 @@ Utochpad 由两部分组成：一个 Windows 服务和驱动组件，以及一�
 - Android 8.1（API 27）及以上，已录入指纹
 - 手机与电脑处于同一局域网，路由器未开启 AP 隔离
 
-> 触控板与旋钮需要电脑安装 [usbip-win2](https://github.com/vadimgrn/usbip-win2) 驱动；解锁功能需要 .NET 10 Runtime。安装包会检测并提示。
+> 触控板与旋钮需要电脑安装 [usbip-win2](https://github.com/vadimgrn/usbip-win2) 驱动；安装器只检测该驱动，不会检测或安装 .NET、Windows App SDK、Visual C++ 等其他运行时。请在运行应用前自行安装其所需运行时。
 
 ### 安装
 
@@ -99,7 +99,7 @@ Utochpad 由两部分组成：一个 Windows 服务和驱动组件，以及一�
 
 ## 控制面板
 
-控制面板是 Utochpad 在 Windows 上的桌面入口，也是 C# 服务的本地管理客户端。它不参与解锁，负责：
+控制面板是基于 C# / WinUI 3 的 Windows 桌面入口，也是服务的本地管理客户端。它不参与解锁，负责：
 
 - **配对手机**：显示配对与连接状态，生成二维码和手动配对码，可复制、取消或重新配对。
 - **Windows 密码**：通过命名管道把密码发送到手机，等待手机指纹确认。
@@ -139,13 +139,13 @@ Get-Content "$env:ProgramData\Utochpad\logs\service-*.log" -Tail 80
 ### 锁屏看不到 Utochpad 磁贴
 
 - 确认以管理员身份运行过安装包，且 `HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Authentication\Credential Providers\{FDF19A17-3800-34D6-B49A-CAE0D53ACA8F}` 存在。
-- 确认 `%ProgramFiles%\Utochpad\CP\Utochpad.CredentialProvider.comhost.dll` 存在，并安装了 .NET 10 Runtime。
+- 确认 `%ProgramFiles%\Utochpad\CP\Utochpad.CredentialProvider.comhost.dll` 存在，并已自行安装 .NET 10 Runtime。
 - 注销或重启后再看；LogonUI 会缓存已加载的 CP。
 
 ### 控制面板没有安装或无法启动
 
 - `%ProgramFiles%\Utochpad\Panel\Utochpad.exe` 缺失时重新运行安装包。
-- Windows 11 自带 WebView2 Runtime，未自带的系统需要单独安装。
+- WinUI 控制面板需要 .NET 10 Runtime、Windows App SDK 2.6.5 Runtime 和 Visual C++ Redistributable；安装器不会检测或安装它们，请自行安装。
 - 查看 `%ProgramData%\Utochpad\logs\service-*.log` 中的服务侧错误。
 
 ### 面板显示“服务未运行”
@@ -189,7 +189,7 @@ Get-Content "$env:ProgramData\Utochpad\logs\service-*.log" -Tail 50
 
 ## 第三方组件
 
-- [VIIPER](https://github.com/Alia5/VIIPER) — 虚拟 USB 设备服务器（GPLv3）。自定义设备源码位于 `Windows/viiper/`，与固定版本的上游源码一起编译、分发。
+- [VIIPER](https://github.com/Alia5/VIIPER) — 虚拟 USB 设备服务器（GPLv3）。自定义设备源码位于 `Windows/viiper/`，与上游最新源码一起编译、分发。
 - [Lithnet.CredentialProvider](https://github.com/lithnet/windows-credential-provider) — 凭据提供程序封装，以 git 子模块引入。
 - [usbip-win2](https://github.com/vadimgrn/usbip-win2) — Windows 的 USB/IP 驱动。
 - [QRCoder](https://github.com/codebude/QRCoder)、[OkHttp](https://square.github.io/okhttp/)、[ZXing Android Embedded](https://github.com/journeyapps/zxing-android-embedded)。
@@ -206,3 +206,11 @@ Licensed under the MIT License.
 ```
 
 MIT 全文随安装包分发，见 `Windows/installer/THIRD-PARTY-NOTICES.txt`。MIT 不授予商标许可；Utochpad 与 Microsoft 无关联，`Windows`、`Surface`、`Segoe`、`Fluent` 为其商标。
+
+## 许可证
+
+本仓库源码（Android 应用、Windows 服务与面板等）以 [Apache License 2.0](LICENSE) 授权，Copyright (c) 2026 Xiaoyang Liu。
+
+例外：`Windows/viiper/`（VIIPER 设备覆盖层）以 [GPL-3.0](Windows/viiper/LICENSE) 授权。该目录代码是 [Alia5/VIIPER](https://github.com/Alia5/VIIPER)（GPL-3.0）的衍生作品，与上游最新源码一同编译为 `viiper.exe` 分发。
+
+安装包同时聚合两者，`LICENSE-APACHE-2.0.txt` 与 `GPL-3.0.txt` 随包安装；第三方组件许可见 `Windows/installer/THIRD-PARTY-NOTICES.txt`。

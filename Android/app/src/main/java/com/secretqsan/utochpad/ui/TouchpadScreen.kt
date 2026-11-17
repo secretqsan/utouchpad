@@ -68,7 +68,11 @@ fun TouchpadScreen(
     val hoverScope = rememberCoroutineScope()
     val soft = LocalSoft.current
 
-    Box(modifier = modifier.fillMaxSize()) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .softBackground(),
+    ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()

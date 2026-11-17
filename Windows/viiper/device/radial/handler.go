@@ -1,6 +1,7 @@
 package radial
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log/slog"
@@ -9,15 +10,22 @@ import (
 	"github.com/Alia5/VIIPER/device"
 	"github.com/Alia5/VIIPER/internal/server/api"
 	"github.com/Alia5/VIIPER/usb"
+	"github.com/Alia5/VIIPER/viiperclient"
 )
 
+var TypeName = viiperclient.DeviceType[viiperclient.NoOptions]{
+	Name: "radial",
+}
+
 func init() {
-	api.RegisterDevice("radial", &handler{})
+	api.RegisterDevice(TypeName.Name, &handler{})
 }
 
 type handler struct{}
 
-func (h *handler) CreateDevice(o *device.CreateOptions) (usb.Device, error) { return New(o) }
+func (h *handler) CreateDevice(ctx context.Context, o *device.CreateOptions) (usb.Device, error) {
+	return New(o)
+}
 
 func (h *handler) StreamHandler() api.StreamHandlerFunc {
 	return func(conn net.Conn, devPtr *usb.Device, logger *slog.Logger) error {

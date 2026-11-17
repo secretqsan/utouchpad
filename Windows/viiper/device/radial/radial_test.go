@@ -95,7 +95,7 @@ func TestInputReports(t *testing.T) {
 	_ = s.UsbServer.AddBus(b)
 
 	client := viiperclient.New(s.ApiServer.Addr())
-	stream, _, err := client.AddDeviceAndConnect(context.Background(), b.BusID(), "radial", nil)
+	stream, _, err := client.AddDeviceAndConnect(context.Background(), b.BusID(), radial.TypeName, nil)
 	if !assert.NoError(t, err) {
 		return
 	}

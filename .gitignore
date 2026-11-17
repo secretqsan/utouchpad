@@ -4,8 +4,8 @@
 
 # .NET / Visual Studio
 .vs/
-
-# Rust / Tauri
+**/bin/
+**/obj/
 /Windows/panel/src-tauri/gen/
 
 # Android / Gradle

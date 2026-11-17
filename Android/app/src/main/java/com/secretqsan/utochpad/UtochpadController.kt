@@ -125,27 +125,16 @@ class UtochpadController(app: Application) {
         connectJob = null
         vault.cancelActivePrompt()
 
-        // Detach first so no further frames are queued, but keep the socket
-        // alive long enough for the queued denial to reach the PC. Closing
-        // immediately would shut the sender thread down first.
+        // Detach first so no further frames are queued. The close flushes the
+        // send queue before the socket goes away, so a queued denial still
+        // reaches the PC.
         val closing = client
         client = null
-        val hadPendingUnlock = pendingUnlockId != null
         pendingUnlockId?.let { id ->
             closing?.sendUnlockResponse(id, false, null, "手机 App 已切到后台")
         }
         pendingUnlockId = null
-
-        if (closing != null) {
-            if (hadPendingUnlock) {
-                scope.launch {
-                    delay(150)
-                    closing.close("app background")
-                }
-            } else {
-                closing.close("app background")
-            }
-        }
+        closing?.close("app background")
 
         update {
             it.copy(
@@ -233,7 +222,7 @@ class UtochpadController(app: Application) {
                 modeBusy = false,
                 modeError = null,
                 authBusy = false,
-                notice = "已解除配对",
+                notice = null,
             )
         }
     }

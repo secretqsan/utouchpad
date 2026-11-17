@@ -1,8 +1,9 @@
 Utochpad third-party notices
 ============================
 
-This installer contains the following third-party components. The full
-license texts are installed next to the application.
+Utochpad itself is licensed under the Apache License, Version 2.0 (see
+LICENSE-APACHE-2.0.txt). This installer contains the following third-party
+components. The full license texts are installed next to the application.
 
 
 VIIPER (GPL-3.0)
@@ -12,13 +13,15 @@ controller.
 
 Upstream: https://github.com/Alia5/VIIPER
 Pinned revision: 20aa112c6ea47187526dd88d0fd666a68a5f4416
-Utochpad overlay source: Windows/viiper in the Utochpad source tree
+Utochpad overlay source: Windows/viiper in the Utochpad source tree,
+licensed under GPL-3.0 (see the LICENSE file in that directory)
 License: GNU General Public License, version 3 (see GPL-3.0.txt)
 
 The bundled viiper.exe is built from the pinned upstream revision with the
 Utochpad device overlay. The corresponding source is available at the URLs
-above. If you redistribute this installer, keep the source offer and the
-GPL-3.0.txt file with it.
+above. If you redistribute this installer, keep the source offer, both
+license texts (GPL-3.0.txt and LICENSE-APACHE-2.0.txt) and this notices
+file with it.
 
 
 Lithnet.CredentialProvider (MIT)
@@ -59,11 +62,38 @@ included in this installer; install it separately from:
 USBip is distributed under the BSD 2-Clause license by its own authors.
 
 
-Control panel frontend
-----------------------
-Tauri (MIT OR Apache-2.0), Vue (MIT), qrcode (MIT). These are compiled into
-Utochpad.exe; their license texts are available from the respective upstream
-projects.
+Control panel
+-------------
+The panel uses Microsoft Windows App SDK WinUI 3 (2.6.5). The Windows App SDK
+runtime is not bundled. The installer does not check for or install it; users
+must install the required runtime separately.
+
+QRCoder (MIT)
+-------------
+Used to generate pairing QR codes locally.
+
+Upstream: https://github.com/Shane32/QRCoder
+Version: 1.7.0
+Copyright (c) 2013-2025 Raffael Herrmann
+Copyright (c) 2024-2025 Shane Krueger
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
 
 Credential provider tile icon
@@ -103,12 +133,11 @@ the Microsoft group of companies. They are used here only to describe
 compatibility and provenance.
 
 
-Microsoft components not bundled
---------------------------------
-The installer does not redistribute .NET or Microsoft Edge WebView2. The
-credential provider requires the .NET 10 runtime, and the control panel
-requires the WebView2 runtime. Both are expected to be provided by Windows or
-by the user.
+Microsoft runtime components not bundled
+-----------------------------------------
+The installer does not redistribute, check for, or install the .NET 10
+Runtime, Windows App SDK Runtime, or Visual C++ Redistributable. Users must
+install required runtime components separately.
 
 
 Inno Setup

@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.19041.0</TargetPlatformMinVersion>
+    <RootNamespace>Utochpad.Panel</RootNamespace>
+    <AssemblyName>Utochpad</AssemblyName>
+    <ApplicationIcon>Assets\Utochpad.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <UseWinUI>true</UseWinUI>
+    <WindowsPackageType>None</WindowsPackageType>
+    <!-- Required by the WinUI SDK targets to publish resources.pri and the
+         compiled XAML (*.xbf). Without it dotnet publish silently drops them
+         and the panel crashes with 0xc000027b in Microsoft.UI.Xaml.dll. -->
+    <EnableMsixTooling>true</EnableMsixTooling>
+    <WindowsAppSDKVersion>2.6.5</WindowsAppSDKVersion>
+    <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
+    <SelfContained>false</SelfContained>
+    <PublishTrimmed>false</PublishTrimmed>
+    <PublishSingleFile>false</PublishSingleFile>
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <Version>2.0.0</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Update="Assets\Utochpad.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.WindowsAppSDK.WinUI" Version="$(WindowsAppSDKVersion)" />
+    <PackageReference Include="Microsoft.WindowsAppSDK.Runtime" Version="$(WindowsAppSDKVersion)" />
+    <PackageReference Include="QRCoder" Version="1.7.0" />
+  </ItemGroup>
+</Project>

@@ -4,12 +4,10 @@
     Builds the Utochpad Windows installer (Utochpad-Setup-<version>.exe).
 
 .DESCRIPTION
-    Publishes the service and credential provider, builds the Tauri control
-    panel and (when needed) viiper.exe, stages everything, and compiles the
-    Inno Setup script. Prerequisite runtimes are not bundled: Windows normally
-    provides WebView2, and the installer warns when the .NET 10 runtime needed
-    by the credential provider is missing. The USBip driver is not bundled
-    either; the installer detects it and tells the user where to get it.
+    Publishes the service, credential provider, and framework-dependent WinUI
+    control panel, builds viiper.exe when needed, stages everything, and
+    compiles the Inno Setup script. The installer only detects the USBip
+    driver; all other runtimes are neither checked nor installed.
 
     Inno Setup itself is a build-machine prerequisite that must be installed
     by the user. This script only looks for an existing ISCC.exe; it never
@@ -17,13 +15,13 @@
 
 .PARAMETER Version
     Installer version. Defaults to the version in
-    Windows\panel\src-tauri\tauri.conf.json.
+    Windows\panel\Utochpad.Panel.csproj.
 
-.PARAMETER PanelExe
-    Use an already built Utochpad.exe instead of running the Tauri build.
+.PARAMETER PanelPublishDir
+    Use a previously published framework-dependent WinUI panel directory.
 
 .PARAMETER SkipPanel
-    Use .build\panel-target\release\Utochpad.exe if it exists.
+    Reuse the framework-dependent WinUI publish output in .build\panel-publish.
 
 .PARAMETER SkipViiper
     Reuse .build\viiper\viiper.exe instead of rebuilding it.
@@ -44,7 +42,7 @@
 [CmdletBinding()]
 param(
     [string]$Version,
-    [string]$PanelExe,
+    [string]$PanelPublishDir,
     [switch]$SkipPanel,
     [switch]$SkipViiper,
     [switch]$ForceViiper,
@@ -60,7 +58,7 @@ $repoRoot = Split-Path -Parent $windowsRoot
 $serviceProject = Join-Path $windowsRoot 'Service\Utochpad.Service\Utochpad.Service.csproj'
 $cpProject = Join-Path $windowsRoot 'Service\Utochpad.CredentialProvider\Utochpad.CredentialProvider.csproj'
 $lithnetProject = Join-Path $windowsRoot 'Service\Lithnet.CredentialProvider\src\Lithnet.CredentialProvider\Lithnet.CredentialProvider.csproj'
-$panelDir = Join-Path $windowsRoot 'panel'
+$panelProject = Join-Path $windowsRoot 'panel\Utochpad.Panel.csproj'
 $artifactsDir = Join-Path $repoRoot '.build\installer'
 $stagingDir = Join-Path $artifactsDir 'staging'
 
@@ -75,38 +73,72 @@ function Assert-ExitCode([string]$What) {
     }
 }
 
-function Invoke-Checked {
-    param(
-        [Parameter(Mandatory = $true)][string]$FilePath,
-        [Parameter(Mandatory = $true)][string[]]$ArgumentList,
-        [string]$WorkingDirectory
-    )
-
-    Push-Location -LiteralPath (Get-Location).Path
-    try {
-        if ($WorkingDirectory) { Set-Location -LiteralPath $WorkingDirectory }
-        & $FilePath @ArgumentList
-        Assert-ExitCode $FilePath
-    }
-    finally {
-        Pop-Location
+function Assert-PanelPublish([string]$PublishDir) {
+    foreach ($file in @('Utochpad.exe', 'Utochpad.dll', 'Utochpad.deps.json', 'Utochpad.runtimeconfig.json', 'Utochpad.pri')) {
+        if (-not (Test-Path -LiteralPath (Join-Path $PublishDir $file))) {
+            throw "WinUI 面板发布目录不完整，缺少 $file：$PublishDir"
+        }
     }
 }
 
-function Resolve-PanelBinary([string]$ReleaseDir) {
-    $candidate = Join-Path $ReleaseDir 'Utochpad.exe'
-    if (Test-Path -LiteralPath $candidate) { return $candidate }
-    return $null
+function Get-NormalizedDirectory([string]$Path) {
+    $trimmed = $Path.Trim().Trim('"')
+    if (-not $trimmed) { return $null }
+    try {
+        return [System.IO.Path]::GetFullPath($trimmed).TrimEnd('\')
+    }
+    catch {
+        return $null
+    }
+}
+
+function Assert-IsccVersion([string]$Path) {
+    $versionText = (Get-Item -LiteralPath $Path).VersionInfo.ProductVersion
+    if ($versionText -notmatch '(\d+)\.(\d+)' -or $versionText -match '^0\.0(?:\.|$)') {
+        $installDir = Get-NormalizedDirectory ([System.IO.Path]::GetDirectoryName($Path))
+        $uninstallRoots = @(
+            'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall',
+            'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall'
+        )
+
+        foreach ($root in $uninstallRoots) {
+            foreach ($key in (Get-ChildItem -LiteralPath $root -ErrorAction SilentlyContinue)) {
+                $registration = Get-ItemProperty -LiteralPath $key.PSPath -ErrorAction SilentlyContinue
+                if (-not $registration.InstallLocation) { continue }
+
+                # Some uninstall entries wrap InstallLocation in quotes.
+                $registeredDir = Get-NormalizedDirectory ([string]$registration.InstallLocation)
+                if ($registeredDir -and $registeredDir -ieq $installDir -and $registration.DisplayVersion) {
+                    $versionText = [string]$registration.DisplayVersion
+                    break
+                }
+            }
+            if ($versionText -match '(\d+)\.(\d+)' -and $versionText -notmatch '^0\.0(?:\.|$)') {
+                break
+            }
+        }
+    }
+
+    if ($versionText -notmatch '(\d+)\.(\d+)' -or $versionText -match '^0\.0(?:\.|$)') {
+        throw "无法读取 Inno Setup 版本：$Path"
+    }
+
+    $major = [int]$Matches[1]
+    $minor = [int]$Matches[2]
+    if (($major -lt 6) -or (($major -eq 6) -and ($minor -lt 1))) {
+        throw "需要 Inno Setup 6.1 或更高版本：$Path"
+    }
+    return $Path
 }
 
 function Resolve-Iscc([string]$Explicit) {
     if ($Explicit) {
         if (-not (Test-Path -LiteralPath $Explicit)) { throw "找不到 ISCC.exe：$Explicit" }
-        return (Resolve-Path -LiteralPath $Explicit).Path
+        return Assert-IsccVersion (Resolve-Path -LiteralPath $Explicit).Path
     }
 
     $command = Get-Command iscc -ErrorAction SilentlyContinue
-    if ($command) { return $command.Source }
+    if ($command) { return Assert-IsccVersion $command.Source }
 
     $installDirs = @()
     if ($env:LOCALAPPDATA) { $installDirs += Join-Path $env:LOCALAPPDATA 'Programs' }
@@ -116,7 +148,7 @@ function Resolve-Iscc([string]$Explicit) {
     foreach ($dir in $installDirs) {
         foreach ($version in @('7', '6')) {
             $candidate = Join-Path $dir "Inno Setup $version\ISCC.exe"
-            if (Test-Path -LiteralPath $candidate) { return $candidate }
+            if (Test-Path -LiteralPath $candidate) { return Assert-IsccVersion $candidate }
         }
     }
 
@@ -137,12 +169,15 @@ Inno Setup 7（免费版即可）：
 # ---------------------------------------------------------------------------
 # Version.
 # ---------------------------------------------------------------------------
-$tauriConfigPath = Join-Path $panelDir 'src-tauri\tauri.conf.json'
+if (-not (Test-Path -LiteralPath $panelProject)) {
+    throw "找不到 $panelProject，无法确定版本号。"
+}
+[xml]$projectXml = Get-Content -LiteralPath $panelProject -Raw
 if (-not $Version) {
-    if (-not (Test-Path -LiteralPath $tauriConfigPath)) {
-        throw "找不到 $tauriConfigPath，无法确定版本号。"
+    $Version = [string]$projectXml.Project.PropertyGroup.Version
+    if (-not $Version) {
+        throw "项目中没有定义 Version：$panelProject"
     }
-    $Version = (Get-Content -LiteralPath $tauriConfigPath -Raw | ConvertFrom-Json).version
 }
 if ($Version -notmatch '^\d+(\.\d+){1,3}$') {
     throw "版本号必须是 1.2.3 或 1.2.3.4 格式，实际为：$Version"
@@ -208,44 +243,36 @@ if (-not (Test-Path -LiteralPath (Join-Path $cpOut 'Utochpad.CredentialProvider.
 }
 
 # ---------------------------------------------------------------------------
-# Control panel.
+# WinUI control panel.
 # ---------------------------------------------------------------------------
-Write-Step '准备控制面板'
+Write-Step '发布 WinUI 控制面板'
 
 $panelOut = Join-Path $stagingDir 'Panel'
-$releaseDir = Join-Path $repoRoot '.build\panel-target\release'
-$panelSource = $null
+$publishDir = Join-Path $repoRoot '.build\panel-publish'
 
-if ($PanelExe) {
-    if (-not (Test-Path -LiteralPath $PanelExe)) { throw "找不到面板程序：$PanelExe" }
-    $panelSource = (Resolve-Path -LiteralPath $PanelExe).Path
-    Copy-Item -LiteralPath $panelSource -Destination (Join-Path $panelOut 'Utochpad.exe') -Force
-    Get-ChildItem -LiteralPath (Split-Path -Parent $panelSource) -Filter '*.dll' -File -ErrorAction SilentlyContinue |
-        Copy-Item -Destination $panelOut -Force
+if ($PanelPublishDir) {
+    if (-not (Test-Path -LiteralPath $PanelPublishDir -PathType Container)) {
+        throw "找不到 WinUI 面板发布目录：$PanelPublishDir"
+    }
+    $publishDir = (Resolve-Path -LiteralPath $PanelPublishDir).Path
 }
-else {
-    if (-not $SkipPanel) {
-        foreach ($tool in @('bun', 'cargo')) {
-            if (-not (Get-Command $tool -ErrorAction SilentlyContinue)) {
-                throw "构建 Tauri 面板需要 $tool。请安装 bun 和 Rust（MSVC toolchain），或用 -PanelExe 指定已构建的 Utochpad.exe。"
-            }
-        }
-
-        Invoke-Checked -FilePath 'bun' -ArgumentList @('install', '--frozen-lockfile') -WorkingDirectory $panelDir
-        Invoke-Checked -FilePath 'bun' -ArgumentList @('run', 'tauri', 'build', '--no-bundle') -WorkingDirectory $panelDir
+elseif (-not $SkipPanel) {
+    if (-not (Test-Path -LiteralPath $panelProject)) {
+        throw "找不到 WinUI 面板项目：$panelProject"
     }
-
-    $panelSource = Resolve-PanelBinary $releaseDir
-    if (-not $panelSource) {
-        throw "没有找到面板构建产物：$releaseDir\Utochpad.exe"
+    if (Test-Path -LiteralPath $publishDir) {
+        Remove-Item -LiteralPath $publishDir -Recurse -Force
     }
-
-    Copy-Item -LiteralPath $panelSource -Destination (Join-Path $panelOut 'Utochpad.exe') -Force
-    Get-ChildItem -LiteralPath $releaseDir -Filter '*.dll' -File -ErrorAction SilentlyContinue |
-        Copy-Item -Destination $panelOut -Force
+    & dotnet publish $panelProject -c Release -r win-x64 --self-contained false `
+        -p:WindowsAppSDKSelfContained=false -p:PublishTrimmed=false -p:PublishSingleFile=false `
+        "-p:Version=$Version" -o $publishDir --nologo
+    Assert-ExitCode '发布 WinUI 控制面板'
 }
 
-Write-Host "  $panelSource"
+Assert-PanelPublish $publishDir
+Copy-Item -Path (Join-Path $publishDir '*') -Destination $panelOut -Recurse -Force
+$panelSize = (Get-ChildItem -LiteralPath $panelOut -File -Recurse | Measure-Object Length -Sum).Sum
+Write-Host ("  {0} ({1:N1} MB)" -f $publishDir, ($panelSize / 1MB))
 
 # ---------------------------------------------------------------------------
 # VIIPER.
@@ -270,12 +297,14 @@ Copy-Item -LiteralPath $viiperExe -Destination (Join-Path $stagingDir 'Viiper\vi
 Write-Host "  $viiperExe"
 
 # ---------------------------------------------------------------------------
-# Third-party notices.
+# License texts and third-party notices.
 # ---------------------------------------------------------------------------
 Copy-Item -LiteralPath (Join-Path $scriptRoot 'THIRD-PARTY-NOTICES.txt') `
     -Destination (Join-Path $stagingDir 'THIRD-PARTY-NOTICES.txt') -Force
 Copy-Item -LiteralPath (Join-Path $scriptRoot 'GPL-3.0.txt') `
     -Destination (Join-Path $stagingDir 'GPL-3.0.txt') -Force
+Copy-Item -LiteralPath (Join-Path $repoRoot 'LICENSE') `
+    -Destination (Join-Path $stagingDir 'LICENSE-APACHE-2.0.txt') -Force
 
 # ---------------------------------------------------------------------------
 # Compile.

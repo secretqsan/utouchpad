@@ -11,7 +11,6 @@ namespace Utochpad.CredentialProvider;
 internal static class CpIpcClient
 {
     private const string PipeName = "utochpad-cp";
-    private const int MaxLineBytes = 1024 * 1024;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     public static CpUnlockResponse RequestUnlock(string username, string domain, int timeoutSeconds)
@@ -55,9 +54,6 @@ internal static class CpIpcClient
                     Error = "Utochpad 服务没有响应",
                 };
             }
-
-            if (Encoding.UTF8.GetByteCount(line) > MaxLineBytes)
-                throw new InvalidOperationException("Pipe message is too large.");
 
             return JsonSerializer.Deserialize<CpUnlockResponse>(line, JsonOptions) ?? new CpUnlockResponse
             {

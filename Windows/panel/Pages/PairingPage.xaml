@@ -1,0 +1,94 @@
+<Page
+    x:Class="Utochpad.Panel.Pages.PairingPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Utochpad.Panel.Controls"
+    Loaded="OnLoaded"
+    Unloaded="OnUnloaded">
+    <ScrollViewer>
+        <StackPanel
+            MaxWidth="900"
+            HorizontalAlignment="Stretch"
+            Spacing="16"
+            Padding="28,20">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock
+                    Text="配对手机"
+                    Style="{StaticResource TitleTextBlockStyle}"
+                    FontSize="26"
+                    FontWeight="SemiBold"
+                    VerticalAlignment="Center" />
+                <StackPanel
+                    Grid.Column="1"
+                    Orientation="Horizontal"
+                    Spacing="18"
+                    VerticalAlignment="Center">
+                    <controls:StatusIndicator x:Name="PairStatus" Text="检查中" />
+                    <controls:StatusIndicator x:Name="ConnectionStatus" Text="检查中" />
+                </StackPanel>
+            </Grid>
+
+            <InfoBar x:Name="NoticeBar" IsOpen="False" IsClosable="True" />
+
+            <Border
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="24">
+                <Grid ColumnDefinitions="280,*" ColumnSpacing="28">
+                    <Border
+                        Width="280"
+                        Height="280"
+                        Background="White"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="6"
+                        Padding="12">
+                        <Grid>
+                            <Image x:Name="QrImage" Stretch="Uniform" Visibility="Collapsed" />
+                            <StackPanel
+                                x:Name="QrPlaceholder"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Spacing="8">
+                                <FontIcon Glyph="&#xE8B7;" FontSize="36" HorizontalAlignment="Center" />
+                                <TextBlock Text="二维码将在此显示" FontSize="13" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <StackPanel Grid.Column="1" Spacing="12" VerticalAlignment="Center">
+                        <TextBlock x:Name="HintText" Text="用手机 Utochpad App 扫描二维码。" TextWrapping="Wrap" />
+                        <Button
+                            x:Name="PairButton"
+                            Content="开始配对"
+                            HorizontalAlignment="Left"
+                            Style="{StaticResource AccentButtonStyle}"
+                            Click="OnPairButtonClick" />
+                        <TextBlock x:Name="ExpiryText" FontSize="12" Opacity="0.72" Visibility="Collapsed" />
+                        <TextBlock
+                            Text="无法扫码？在手机上输入配对码。"
+                            FontSize="12"
+                            TextWrapping="Wrap"
+                            Visibility="Collapsed"
+                            x:Name="ManualCodeHint" />
+                        <TextBox
+                            x:Name="ManualCodeBox"
+                            AcceptsReturn="True"
+                            FontFamily="Consolas"
+                            IsReadOnly="True"
+                            MaxHeight="110"
+                            TextWrapping="Wrap"
+                            Visibility="Collapsed" />
+                        <Button
+                            x:Name="CopyCodeButton"
+                            Content="复制配对码"
+                            HorizontalAlignment="Left"
+                            Visibility="Collapsed"
+                            Click="OnCopyCodeClick" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

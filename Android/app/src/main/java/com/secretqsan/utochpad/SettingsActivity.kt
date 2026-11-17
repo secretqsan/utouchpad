@@ -10,7 +10,6 @@ import androidx.compose.runtime.getValue
 import androidx.fragment.app.FragmentActivity
 import com.secretqsan.utochpad.data.AppTheme
 import com.secretqsan.utochpad.ui.SettingsScreen
-import com.secretqsan.utochpad.ui.SoftTheme
 import com.secretqsan.utochpad.ui.SystemBarsAppearance
 import com.secretqsan.utochpad.ui.theme.UtochpadTheme
 
@@ -39,14 +38,12 @@ class SettingsActivity : FragmentActivity() {
             val state by controller.state.collectAsState()
             val darkTheme = state.theme == AppTheme.Dark
             UtochpadTheme(darkTheme = darkTheme) {
-                SoftTheme(darkTheme = darkTheme) {
-                    SystemBarsAppearance(darkTheme)
-                    SettingsScreen(
-                        controller = controller,
-                        state = state,
-                        onBack = { finish() },
-                    )
-                }
+                SystemBarsAppearance(darkTheme)
+                SettingsScreen(
+                    controller = controller,
+                    state = state,
+                    onBack = { finish() },
+                )
             }
         }
     }

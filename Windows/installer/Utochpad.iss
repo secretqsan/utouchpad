@@ -3,17 +3,17 @@
 ; Built by build-installer.ps1. The staging directory must contain:
 ;   Service\   self-contained Utochpad.Service publish output
 ;   CP\        framework-dependent credential provider publish output
-;   Panel\     Utochpad.exe (Tauri control panel)
+;   Panel\     framework-dependent WinUI control panel publish output
 ;   Viiper\    viiper.exe
 ;
-; .NET Runtime and WebView2 are intentionally NOT bundled: Windows normally
-; has WebView2, and the app reports a missing .NET Runtime at runtime.
+; The installer checks only for the USBip driver. Other runtimes must be
+; installed separately and are neither checked nor installed here.
 
 #ifndef AppVersion
-  #define AppVersion "1.0.0"
+  #define AppVersion "2.0.0"
 #endif
 #ifndef AppVersionQuad
-  #define AppVersionQuad "1.0.0.0"
+  #define AppVersionQuad "2.0.0.0"
 #endif
 #ifndef StagingDir
   #define StagingDir "..\..\.build\installer\staging"
@@ -21,7 +21,6 @@
 #ifndef OutputDir
   #define OutputDir "..\..\.build\installer"
 #endif
-
 #define AppName "Utochpad"
 #define ServiceName "UtochpadService"
 #define CpGuid "FDF19A17-3800-34D6-B49A-CAE0D53ACA8F"
@@ -43,7 +42,7 @@ ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0.19041
 OutputDir={#OutputDir}
 OutputBaseFilename=Utochpad-Setup-{#AppVersion}
-SetupIconFile=..\panel\src-tauri\icons\icon.ico
+SetupIconFile=..\panel\Assets\Utochpad.ico
 UninstallDisplayIcon={app}\Panel\Utochpad.exe
 UninstallDisplayName={#AppName} {#AppVersion}
 Compression=lzma2/ultra64
@@ -74,7 +73,6 @@ chinesesimplified.RegisteringCP=正在注册凭据提供程序...
 chinesesimplified.StartingService=正在启动 Utochpad 服务...
 chinesesimplified.ServiceStartFailed=Utochpad 服务未能启动。%n%n请用“服务”管理器检查 UtochpadService，或查看 %ProgramData%\Utochpad\logs 中的日志。
 chinesesimplified.CpRegisterFailed=凭据提供程序注册失败，锁屏界面的 Utochpad 磁贴可能不可用。%n%n请重启电脑后重新运行安装程序。
-chinesesimplified.DotNetMissing=未检测到 .NET 10 运行时，锁屏界面的 Utochpad 磁贴将不可用。%n%n请安装 .NET 10 Runtime 后重新运行安装程序：%nhttps://dotnet.microsoft.com/download/dotnet/10.0
 chinesesimplified.PurgeData=是否同时删除配对数据和日志？%n%n选择“否”将保留它们，方便以后重新安装或重新配对。
 chinesesimplified.UsbipReadyNote=未检测到 USBip 驱动。触控板和旋钮需要它；安装完成后请手动安装：%nhttps://github.com/vadimgrn/usbip-win2
 chinesesimplified.UsbipMissing=未检测到 USBip 驱动，触控板和旋钮将无法使用。%n%n请手动安装 USBip：%nhttps://github.com/vadimgrn/usbip-win2%n%n安装后建议重启电脑，或在“服务”中重启 UtochpadService。
@@ -89,7 +87,6 @@ english.RegisteringCP=Registering credential provider...
 english.StartingService=Starting the Utochpad service...
 english.ServiceStartFailed=The Utochpad service could not be started.%n%nCheck UtochpadService in Services, or see the logs in %ProgramData%\Utochpad\logs.
 english.CpRegisterFailed=The credential provider could not be registered. The Utochpad tile may be missing from the sign-in screen.%n%nRestart Windows and run the installer again.
-english.DotNetMissing=.NET 10 Runtime was not detected. The Utochpad tile on the sign-in screen will not work.%n%nInstall .NET 10 Runtime and run the installer again:%nhttps://dotnet.microsoft.com/download/dotnet/10.0
 english.PurgeData=Delete pairing data and logs as well?%n%nChoose No to keep them for a future reinstall or re-pair.
 english.UsbipReadyNote=The USBip driver was not detected. The touchpad and dial require it; install it manually after setup:%nhttps://github.com/vadimgrn/usbip-win2
 english.UsbipMissing=The USBip driver was not detected. The touchpad and dial will not work.%n%nInstall USBip manually:%nhttps://github.com/vadimgrn/usbip-win2%n%nRestart Windows (or UtochpadService) after installing it.
@@ -106,6 +103,7 @@ Source: "{#StagingDir}\Panel\*"; DestDir: "{app}\Panel"; Flags: ignoreversion re
 Source: "{#StagingDir}\Viiper\viiper.exe"; DestDir: "{app}\Service\viiper"; Flags: ignoreversion
 Source: "{#StagingDir}\THIRD-PARTY-NOTICES.txt"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#StagingDir}\GPL-3.0.txt"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#StagingDir}\LICENSE-APACHE-2.0.txt"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{autoprograms}\Utochpad"; Filename: "{app}\Panel\Utochpad.exe"; WorkingDir: "{app}\Panel"; IconFilename: "{app}\Panel\Utochpad.exe"; Comment: "{cm:AppComment}"
@@ -134,19 +132,6 @@ function IsUsbipInstalled(): Boolean;
 begin
   Result := RegKeyExists(HKLM, 'SYSTEM\CurrentControlSet\Services\usbip2_ude') and
             RegKeyExists(HKLM, 'SYSTEM\CurrentControlSet\Services\usbip2_filter');
-end;
-
-function HasDotNet10Runtime(): Boolean;
-var
-  FindRec: TFindRec;
-begin
-  Result := False;
-  if FindFirst(ExpandConstant('{commonpf64}\dotnet\shared\Microsoft.NETCore.App\10.*'), FindRec) then
-  try
-    Result := (FindRec.Attributes and FILE_ATTRIBUTE_DIRECTORY) <> 0;
-  finally
-    FindClose(FindRec);
-  end;
 end;
 
 function ServiceExists(const Name: String): Boolean;
@@ -414,13 +399,6 @@ begin
       Log('Credential provider is not registered at ' + ExpectedCpPath);
       if not WizardSilent then
         MsgBox(CustomMessage('CpRegisterFailed'), mbError, MB_OK);
-    end;
-
-    if not HasDotNet10Runtime() then
-    begin
-      Log('The .NET 10 runtime was not found.');
-      if not WizardSilent then
-        MsgBox(CustomMessage('DotNetMissing'), mbError, MB_OK);
     end;
 
     if not IsUsbipInstalled() then

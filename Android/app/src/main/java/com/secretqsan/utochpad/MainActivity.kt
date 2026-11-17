@@ -9,6 +9,9 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.FragmentActivity
 import com.secretqsan.utochpad.data.AppTheme
 import com.secretqsan.utochpad.ui.UtochpadApp
@@ -43,10 +46,28 @@ class MainActivity : FragmentActivity() {
             navigationBarStyle = barStyle,
         )
 
+        // The whole app is one fullscreen surface: pairing, loading and the
+        // touchpad. Hiding the bars before the first frame keeps the content
+        // from shifting when the connection becomes ready.
+        hideSystemBars()
+
         ensureLocalNetworkPermission()
 
         setContent {
             UtochpadApp(controller)
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        hideSystemBars()
+    }
+
+    private fun hideSystemBars() {
+        WindowCompat.getInsetsController(window, window.decorView).apply {
+            hide(WindowInsetsCompat.Type.systemBars())
+            systemBarsBehavior =
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
     }
 

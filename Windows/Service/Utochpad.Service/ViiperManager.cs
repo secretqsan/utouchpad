@@ -164,7 +164,7 @@ public sealed class ViiperManager : IAsyncDisposable
     /// Creates the virtual device(s) requested by <paramref name="mode"/> and
     /// holds a control stream for each one.
     /// </summary>
-    public async Task<(bool Ok, string? Error)> EnterModeAsync(string mode, CancellationToken cancellationToken = default)
+    public async Task<(bool Ok, string? Error)> EnterModeAsync(string? mode, CancellationToken cancellationToken = default)
     {
         var wanted = DevicesForMode(mode);
         if (wanted.Length == 0)
@@ -404,7 +404,7 @@ public sealed class ViiperManager : IAsyncDisposable
         return Encoding.UTF8.GetString(buffer.ToArray()).Trim();
     }
 
-    private static string[] DevicesForMode(string mode) =>
+    private static string[] DevicesForMode(string? mode) =>
         mode == UtochpadConstants.ModeInput
             ? [UtochpadConstants.ViiperDeviceTouchpad, UtochpadConstants.ViiperDeviceRadial]
             : [];

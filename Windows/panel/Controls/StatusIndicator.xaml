@@ -1,0 +1,25 @@
+<UserControl
+    x:Class="Utochpad.Panel.Controls.StatusIndicator"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <UserControl.Resources>
+        <SolidColorBrush x:Key="StatusNeutralBrush" Color="#8E9398" />
+        <SolidColorBrush x:Key="StatusPositiveBrush" Color="#3F9B75" />
+        <SolidColorBrush x:Key="StatusCautionBrush" Color="#C09055" />
+        <SolidColorBrush x:Key="StatusCriticalBrush" Color="#C25E5E" />
+    </UserControl.Resources>
+
+    <StackPanel Orientation="Horizontal" Spacing="6">
+        <Ellipse
+            x:Name="Dot"
+            Width="6"
+            Height="6"
+            VerticalAlignment="Center"
+            Fill="{StaticResource StatusNeutralBrush}" />
+        <TextBlock
+            x:Name="Label"
+            VerticalAlignment="Center"
+            FontSize="12"
+            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+    </StackPanel>
+</UserControl>

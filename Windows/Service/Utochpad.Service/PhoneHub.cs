@@ -58,11 +58,6 @@ public sealed class PhoneHub
         get { lock (_gate) return _session?.PasswordSet == true; }
     }
 
-    public string? ActiveMode
-    {
-        get { lock (_gate) return _session?.ActiveMode; }
-    }
-
     public string? PendingUnlockUser
     {
         get { lock (_gate) return _session?.PendingUnlockUser; }
@@ -70,15 +65,13 @@ public sealed class PhoneHub
 
     public UiStatus GetStatus() => new()
     {
-        // Match the panel's three-part version string (1.0.0, not 1.0.0.0).
-        Version = typeof(PhoneHub).Assembly.GetName().Version?.ToString(3) ?? "1.0.0",
+        // Match the panel's three-part version string (2.0.0, not 2.0.0.0).
+        Version = typeof(PhoneHub).Assembly.GetName().Version?.ToString(3) ?? "2.0.0",
         Paired = Paired,
         PairVersion = PairVersion,
-        PhoneName = _config.PairedDeviceName,
         PhoneConnected = PhoneConnected,
         PhoneHasPassword = PhoneHasPassword,
         ViiperRunning = _viiper.IsProcessRunning,
-        ActiveMode = ActiveMode,
         PendingUnlockUser = PendingUnlockUser,
         Port = _config.Port,
         Hosts = GetLanAddresses(),
@@ -253,7 +246,7 @@ public sealed class PhoneHub
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unexpected WebSocket error");
-            try { await CloseAsync(socket, "error", cancellationToken).ConfigureAwait(false); } catch { }
+            await CloseAsync(socket, "error", cancellationToken).ConfigureAwait(false);
         }
     }
 
@@ -391,19 +384,11 @@ public sealed class PhoneHub
             return;
         }
 
-        byte[] pairKey;
-        try
-        {
-            var pairedPub = Convert.FromBase64String(_config.PairedPhonePublicKey!);
-            var shared = CryptoUtil.DeriveSharedSecret(_config.GetPrivateKey(), pairedPub);
-            pairKey = CryptoUtil.DerivePairKey(shared);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Cannot derive pairing key");
-            await CloseAsync(socket, "pair key", cancellationToken).ConfigureAwait(false);
-            return;
-        }
+        // The pairing record was proven usable at load time (ServiceConfig),
+        // so key derivation here cannot fail on stored data.
+        var pairedPub = Convert.FromBase64String(_config.PairedPhonePublicKey!);
+        var sharedSecret = CryptoUtil.DeriveSharedSecret(_config.GetPrivateKey(), pairedPub);
+        var pairKey = CryptoUtil.DerivePairKey(sharedSecret);
 
         var nonceS = RandomNumberGenerator.GetBytes(16);
         var serverProof = CryptoUtil.Hmac(pairKey, CryptoUtil.ProofText("server", nonceP, nonceS));

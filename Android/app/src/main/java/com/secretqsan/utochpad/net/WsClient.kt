@@ -131,17 +131,30 @@ class WsClient(
 
     fun close(reason: String = "closed") {
         if (closed.compareAndSet(false, true)) {
+            // The close is routed through the send thread so frames queued
+            // before it — an unlock denial sent just before backgrounding, for
+            // one — reach OkHttp first; OkHttp then sends its close frame after
+            // everything already enqueued.
             try {
-                socket?.close(1000, reason)
-            } catch (_: Exception) {
-                socket?.cancel()
+                sendExecutor.execute { closeSocket(reason) }
+            } catch (_: RejectedExecutionException) {
+                closeSocket(reason)
             }
         }
         // Even when the socket already closed itself (onClosed sets `closed`),
-        // the sender thread still has to be released.
-        sendExecutor.shutdownNow()
+        // the sender thread still has to be released. A graceful shutdown lets
+        // the queued frames and the close above finish first.
+        sendExecutor.shutdown()
         if (!ready.isCompleted) {
             ready.complete(Result.failure(Exception(reason)))
+        }
+    }
+
+    private fun closeSocket(reason: String) {
+        try {
+            socket?.close(1000, reason)
+        } catch (_: Exception) {
+            socket?.cancel()
         }
     }
 
@@ -435,7 +448,7 @@ object PairClient {
         deviceId: String,
         deviceName: String,
     ): Result<Unit> {
-        var lastError: Exception? = null
+        var lastError: Throwable? = null
 
         for (host in payload.hosts) {
             val result = withTimeoutOrNull(PairTimeoutMillis) {
@@ -537,8 +550,7 @@ object PairClient {
             } ?: Result.failure(Exception("配对超时"))
 
             if (result.isSuccess) return result
-            lastError = result.exceptionOrNull() as? Exception
-                ?: Exception(result.exceptionOrNull()?.message)
+            lastError = result.exceptionOrNull()
         }
 
         return Result.failure(

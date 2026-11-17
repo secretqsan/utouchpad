@@ -62,11 +62,9 @@ public sealed class UiStatus
     /// an already-paired PC does not mistake its old pairing for the new one.
     /// </summary>
     public int PairVersion { get; set; }
-    public string? PhoneName { get; set; }
     public bool PhoneConnected { get; set; }
     public bool PhoneHasPassword { get; set; }
     public bool ViiperRunning { get; set; }
-    public string? ActiveMode { get; set; }
     public string? PendingUnlockUser { get; set; }
     public int Port { get; set; }
     public string[] Hosts { get; set; } = [];

@@ -49,7 +49,10 @@ android {
             }
             optimization {
                 enable = true
-                packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")
+                // Keep the default "**" packageScope. Restricting it (e.g. to
+                // androidx/kotlin/kotlinx) makes R8 narrow the access of in-scope
+                // classes while out-of-scope subclasses keep extending them, and
+                // the app dies on start with IllegalAccessError.
             }
         }
     }
@@ -65,7 +68,6 @@ android {
 dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
-    implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
@@ -77,4 +79,6 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.zxing.android.embedded)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.miuix)
+    implementation(libs.miuix.icons)
 }

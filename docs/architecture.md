@@ -27,18 +27,18 @@
 | `Windows/Service/Utochpad.Service` | SYSTEM 服务，持有手机连接、CP IPC、VIIPER 进程与虚拟设备 |
 | `Windows/Service/Utochpad.Shared` | PC 端共享的协议常量、CP 管道消息与 IPC 工具 |
 | `Windows/Service/Lithnet.CredentialProvider` | 凭据提供程序封装，git 子模块 |
-| `Windows/panel` | Tauri 2 + Vue 3 控制面板：配对二维码、推送密码、维护与关于 |
-| `Windows/viiper` | 对 VIIPER 的自定义设备（`ptp`、`radial`），构建时覆盖到固定版本的上游源码 |
+| `Windows/panel` | C# / WinUI 3 控制面板：配对二维码、推送密码、维护与关于 |
+| `Windows/viiper` | 对 VIIPER 的自定义设备（`ptp`、`radial`），构建时覆盖到上游最新源码 |
 | `Windows/installer` | Inno Setup 安装包（`Utochpad.iss`、`build-installer.ps1`）与 `build-viiper.ps1` |
-| `Android` | Compose 手机应用：配对、指纹解锁、横屏触控板 + Radial、独立设置页 |
+| `Android` | Compose 手机应用：配对、指纹解锁、横屏触控板 + Radial、独立设置页（除触控板外均由 Miuix 实现） |
 | `brand` | 品牌资源 |
 
 | 组件 | 技术 |
 | --- | --- |
-| Android 应用 | Kotlin · Jetpack Compose · Android Keystore |
+| Android 应用 | Kotlin · Jetpack Compose · Miuix · Android Keystore |
 | Windows 服务 | C# · .NET 10 · LocalSystem Windows 服务 |
 | 凭据提供程序 | COM · Lithnet.CredentialProvider · .NET 10 |
-| 控制面板 | Tauri 2 · Vue 3 · Rust |
+| 控制面板 | C# · WinUI 3 · Windows App SDK |
 | 虚拟 USB 设备 | Go · VIIPER · usbip-win2 |
 
 服务以 `LocalSystem` 运行，因此锁屏界面（LogonUI，SYSTEM 会话）也能通过命名管道请求手机验证。控制面板只是普通用户界面，不参与解锁。

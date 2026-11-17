@@ -1,7 +1,7 @@
 #requires -Version 5.1
 <#
 .SYNOPSIS
-    Builds viiper.exe from a pinned upstream VIIPER revision plus the
+    Builds viiper.exe from the latest upstream VIIPER revision plus the
     utochpad device overlay.
 
 .DESCRIPTION
@@ -9,7 +9,8 @@
     .build\viiper\<sha> (never committed). The contents of Windows\viiper\
     are then copied over that checkout and the binary is built from it.
 
-    Updating VIIPER means changing the SHA in Windows\viiper\VIIPER_VERSION.
+    Each build resolves the newest commit on the upstream default branch.
+    Pass -UpstreamSha to build a specific commit instead.
 
 .PARAMETER OutDir
     Output directory. Default: .build\viiper
@@ -17,6 +18,10 @@
 .PARAMETER Version
     Version string embedded in the binary.
     Default: utochpad-<short sha>
+
+.PARAMETER UpstreamSha
+    Build a specific upstream commit (full 40-character SHA) instead of the
+    latest revision of the upstream default branch.
 
 .PARAMETER ForceFetch
     Re-download the upstream source even when the cache already exists.
@@ -34,6 +39,7 @@
 param(
     [string]$OutDir,
     [string]$Version,
+    [string]$UpstreamSha,
     [switch]$ForceFetch,
     [switch]$Test
 )
@@ -46,19 +52,24 @@ $windowsRoot = Split-Path -Parent $scriptRoot
 $repoRoot = Split-Path -Parent $windowsRoot
 if (-not $repoRoot) { $repoRoot = (Get-Location).Path }
 $overlayDir = Join-Path $windowsRoot 'viiper'
-$versionFile = Join-Path $overlayDir 'VIIPER_VERSION'
 
-if (-not (Test-Path -LiteralPath $versionFile)) {
-    throw "Missing $versionFile"
+if ($UpstreamSha) {
+    $sha = $UpstreamSha.Trim().ToLowerInvariant()
+    if ($sha -notmatch '^[0-9a-f]{40}$') {
+        throw "UpstreamSha must be a full 40-character commit SHA, got '$UpstreamSha'"
+    }
 }
-
-$sha = (Get-Content -LiteralPath $versionFile |
-        Where-Object { $_ -match '\S' -and $_ -notmatch '^\s*#' } |
-        Select-Object -First 1).Trim()
-if ($sha -notmatch '^[0-9a-fA-F]{40}$') {
-    throw "VIIPER_VERSION must contain a full 40-character commit SHA, got '$sha'"
+else {
+    Write-Host 'Resolving latest Alia5/VIIPER commit...'
+    $lsRemote = & git ls-remote 'https://github.com/Alia5/VIIPER.git' HEAD
+    if ($LASTEXITCODE -ne 0) {
+        throw "git ls-remote failed with exit code $LASTEXITCODE"
+    }
+    $sha = ('{0}' -f ($lsRemote -split '\s+')[0]).Trim().ToLowerInvariant()
+    if ($sha -notmatch '^[0-9a-f]{40}$') {
+        throw "Could not resolve the latest VIIPER commit, got '$sha'"
+    }
 }
-$sha = $sha.ToLowerInvariant()
 $shortSha = $sha.Substring(0, 7)
 if (-not $Version) { $Version = "utochpad-$shortSha" }
 
@@ -109,7 +120,7 @@ foreach ($dir in @('device\ptp', 'device\radial')) {
 }
 
 Write-Host 'Applying overlay...'
-$robocopyArgs = @($overlayDir, $srcDir, '/E', '/NFL', '/NDL', '/NJH', '/NJS', '/NP', '/XF', 'VIIPER_VERSION')
+$robocopyArgs = @($overlayDir, $srcDir, '/E', '/NFL', '/NDL', '/NJH', '/NJS', '/NP')
 & robocopy @robocopyArgs | Out-Null
 if ($LASTEXITCODE -ge 8) {
     throw "robocopy failed with exit code $LASTEXITCODE"

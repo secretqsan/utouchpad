@@ -21,6 +21,7 @@ public sealed class PhoneSession
     private readonly byte[] _receiveChunk = new byte[16 * 1024];
 
     private TaskCompletionSource<UnlockResult>? _pendingUnlock;
+    private string? _pendingUnlockId;
     private TaskCompletionSource<(bool Ok, string? Error)>? _pendingSetPassword;
 
     private volatile bool _connected;
@@ -47,8 +48,6 @@ public sealed class PhoneSession
     public bool IsConnected => _connected && _socket.State == WebSocketState.Open;
 
     public bool PasswordSet => _passwordSet;
-
-    public string? ActiveMode => _activeMode;
 
     public string? PendingUnlockUser => _pendingUnlockUser;
 
@@ -350,17 +349,8 @@ public sealed class PhoneSession
 
     private async Task EnterModeAsync(string? mode, CancellationToken cancellationToken)
     {
-        if (mode != UtochpadConstants.ModeInput)
-        {
-            await SendControlAsync(new WsControlMessage
-            {
-                T = WsMessageTypes.ModeError,
-                Mode = mode,
-                Message = "无法启动输入设备，请重试。",
-            }, cancellationToken).ConfigureAwait(false);
-            return;
-        }
-
+        // Mode validity lives in ViiperManager: an unknown mode comes back as a
+        // failed EnterMode with the same error message the phone already shows.
         var (ok, error) = await _viiper.EnterModeAsync(mode, cancellationToken).ConfigureAwait(false);
         _activeMode = ok ? mode : null;
 
@@ -385,16 +375,7 @@ public sealed class PhoneSession
         plaintext[0] = payloadType;
         body.CopyTo(plaintext.AsMemory(1));
 
-        byte[] frame;
-        try
-        {
-            frame = _sendCrypto.Seal(plaintext);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to encrypt outgoing frame");
-            return false;
-        }
+        var frame = _sendCrypto.Seal(plaintext);
 
         await _sendLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
@@ -483,8 +464,6 @@ public sealed class PhoneSession
 
         FailPending("手机连接已断开");
     }
-
-    private string? _pendingUnlockId;
 
     private readonly record struct UnlockResult(bool Ok, string? Password, string? Error);
 }
